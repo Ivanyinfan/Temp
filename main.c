@@ -3,6 +3,7 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 #include "util.h"
 #include "symbol.h"
 #include "types.h"
@@ -45,13 +46,14 @@ static void doProc(FILE *out, F_frame frame, T_stm body)
 
  F_tempMap = Temp_empty();
 
- //fprintf(logFile,"[main][doProc]for function %s:\n", S_name(F_name(frame)));fflush(logFile);
+ fprintf(stdout,"[main][doProc]for function %s:\n", S_name(F_name(frame)));fflush(stdout);
+ printf("-------==== before linerize =====-----\n");
  //printStmList(stdout, T_StmList(body, NULL));
  printf("-------====IR tree=====-----\n");
 
  stmList = C_linearize(body);
- /*printStmList(stdout, stmList);*/
- //fprintf(logFile,"--------=====Linearlized======------\n");fflush(logFile);
+ //printStmList(stdout, stmList);
+ //fprintf(stdout,"--------=====Linearlized======------\n");fflush(stdout);
 
  blo = C_basicBlocks(stmList);
  C_stmListList stmLists = blo.stmLists;
@@ -104,23 +106,31 @@ static void doProc(FILE *out, F_frame frame, T_stm body)
  fprintf(out, "%s", proc->epilog);
  //fprintf(out, "END %s\n\n", Temp_labelstring(F_name(frame)));
  */
+ fprintf(stdout,"[main][doProc]for function %s complete\n", S_name(F_name(frame)));fflush(stdout);
 }
 
 void doStr(FILE *out, Temp_label label, string str) {
+	fprintf(stdout,"[main][doStr]begin\n");fflush(stdout);
+	
 	fprintf(out, ".section .rodata\n");
-	fprintf(out, ".%s:\n", S_name(label));
+	fprintf(out, "%s:\n", S_name(label));
 
-	int length = *(int *)str;
-	length = length + 4;
+	/*int length = *(int *)str;
+	length = length + 4;*/
 	//it may contains zeros in the middle of string. To keep this work, we need to print all the charactors instead of using fprintf(str)
+	int length=strlen(str);
+	string rstr=recoverString(str);
+	int newlength=strlen(rstr);
+	fprintf(stdout,"[main][doStr]length=%d\n",length);fflush(stdout);
+	fprintf(out, ".int %d\n",length);
 	fprintf(out, ".string \"");
-	int i = 0;
-	for (; i < length; i++) {
-		fprintf(out, "%c", str[i]);
+	for (int i=0; i < newlength; i++) {
+		fprintf(out, "%c", rstr[i]);
 	}
 	fprintf(out, "\"\n");
 
 	//fprintf(out, ".string \"%s\"\n", str);
+	fprintf(stdout,"[main][doStr]complete\n");fflush(stdout);
 }
 
 int main(int argc, string *argv)
@@ -145,7 +155,7 @@ int main(int argc, string *argv)
 
    //Lab 6: escape analysis
    //If you have implemented escape analysis, uncomment this
-   //Esc_findEscape(absyn_root); /* set varDec's escape field */
+   Esc_findEscape(absyn_root); /* set varDec's escape field */
 
    frags = SEM_transProg(absyn_root);
    if (anyErrors) return 1; /* don't continue */

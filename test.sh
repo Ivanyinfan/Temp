@@ -21,7 +21,7 @@ score=0
 
 #pwd
 #make clean >& /dev/null
-echo "make-----------------------"
+echo "============================== make ================================"
 make
 #echo $?
 if [[ $? != 0 ]]; then
@@ -29,14 +29,13 @@ if [[ $? != 0 ]]; then
 	make clean >& /dev/null
 	exit 123
 fi
-
 	for tcase in `ls $TESTCASEDIR/`
 	do		
 		if [ ${tcase##*.} = "tig" ]; then
 			tfileName=${tcase##*/}
-			echo "compile----------------------------"
+			echo "============================== compile ================================"
 			./$BIN $TESTCASEDIR/$tfileName
-			echo "linking--------------------"
+			echo "=============================== link ================================"
 			gcc -Wl,--wrap,getchar -m32 $TESTCASEDIR/${tfileName}.s runtime.c -o test.out
 			if [ ! -s test.out ]; then
 				echo -e "${BLUE_COLOR}[*_*]$ite: Link error. [$tfileName]${RES}"
@@ -52,7 +51,7 @@ fi
 				exit 234
 			fi
 				
-			rm -f _tmp.txt _ref.txt $TESTCASEDIR/${tfileName}.s test.out				
+			rm -f _tmp.txt _ref.txt test.out				
 			echo -e "pass ${tfileName}"
 			tname=${tfileName##t}
 			if [ $tname = $tfileName ]; then

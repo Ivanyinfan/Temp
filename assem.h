@@ -22,6 +22,7 @@ struct AS_instr_
 	int key;
 };
 string AssemInst(AS_instr inst);
+void printASInstr(FILE *out,AS_instr i);
 
 AS_instr AS_Oper(string a, Temp_tempList d, Temp_tempList s, AS_targets j);
 AS_instr AS_Label(string a, Temp_label label);

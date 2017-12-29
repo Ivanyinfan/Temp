@@ -25,6 +25,8 @@ struct F_access_ {
 		Temp_temp reg; //inReg
 	} u;
 };
+int getFAccessKind(F_access a) {return a->kind;}
+int getFAccessOffset(F_access a) {return a->u.offset;}
 
 const int F_wordSize = 4;
 
@@ -103,6 +105,7 @@ Temp_temp F_edi(void)
 
 static F_access InFrame(int offset)
 {
+	//fprintf(stdout,"[X86frame][InFrame] offset=%d\n",offset);fflush(stdout);
     F_access a = checked_malloc(sizeof(*a));
     a->kind = inFrame;
     a->u.offset = offset;
@@ -127,20 +130,22 @@ F_accessList F_AccessList(F_access head, F_accessList tail)
     return al;
 }
 
+//新建一个栈，对于x86来说每个参数都在栈中
 F_frame F_newFrame(Temp_label name, U_boolList formals)
 {
+	//fprintf(stdout,"[X86frame][F_newFrame] formal num=%d\n",UBoolListLen(formals));fflush(stdout);
 	F_frame f=checked_malloc(sizeof(*f));
 	f->name=name;
-	f->formals=F_AccessList2(1,formals);
+	f->formals=F_AccessList2(2,formals);
 	f->localNum=0;
 }
 
 static F_accessList F_AccessList2(int level, U_boolList formals)
 {
-	/* assume every formal is escape */
+	//fprintf(stdout,"[X86frame][F_newFrame] level=%d\n",level);fflush(stdout);
 	if(!formals)
 		return NULL;
-	return F_AccessList(InFrame(level*F_wordSize),F_AccessList2(++level,formals->tail));
+	return F_AccessList(InFrame(level*F_wordSize),F_AccessList2(level+1,formals->tail));
 }
 
 Temp_label F_name(F_frame f)
@@ -148,6 +153,7 @@ Temp_label F_name(F_frame f)
 	return f->name;
 }
 
+//返回局部变量获得列表
 F_accessList F_formals(F_frame f)
 {
 	return f->formals;
@@ -172,19 +178,26 @@ int F_spill(F_frame f)
     return Temp_newtemp();
 }*/
 
+/* 书中112页
+ * F_Exp将一个F_access转换成Tree表达式
+ * T_exp参数是F_access所在的栈帧地址 */
 T_exp F_Exp(F_access acc, T_exp framePtr)
 {
+	//fprintf(stdout,"[X86frame][F_Exp] acc->kind=%d\n",acc->kind);fflush(stdout);
     if (acc->kind == inFrame)
+    {
+    	//fprintf(stdout,"[X86frame][F_Exp] acc->u.offset=%d\n",acc->u.offset);fflush(stdout);
         return T_Mem(T_Binop(T_plus, framePtr, T_Const(acc->u.offset)));
+    }
     return T_Temp(acc->u.reg);
 }
 
 T_exp F_externalCall(string s, T_expList args)
 {
-	//fprintf(logFile,"[X86frame][F_externalCall] begin\n");fflush(logFile);
-	//fprintf(logFile,"[X86frame][F_externalCall] argsNum=%d\n",TExpListLen(args));fflush(logFile);
+	////fprintf(stdout,"[X86frame][F_externalCall] begin\n");fflush(stdout);
+	////fprintf(stdout,"[X86frame][F_externalCall] argsNum=%d\n",TExpListLen(args));fflush(stdout);
 	T_exp e=T_Call(T_Name(Temp_namedlabel(s)), args);
-	//fprintf(logFile,"[X86frame][F_externalCall] complete\n");fflush(logFile);
+	////fprintf(stdout,"[X86frame][F_externalCall] complete\n");fflush(stdout);
     return e;
 }
 
@@ -211,6 +224,7 @@ F_fragList F_FragList(F_frag head, F_fragList tail) {
 	return f;
 }
 
+//函数进出口操作
 AS_proc F_procEntryExit3(F_frame f, AS_instrList body)
 {
 	AS_instr inst1=AS_Oper("pushl %ebp\n",NULL,Temp_TempList(F_FP(),NULL),AS_Targets(NULL));

@@ -19,6 +19,9 @@ Temp_temp F_edi(void);
 typedef struct F_frame_ *F_frame;
 
 typedef struct F_access_ *F_access;
+int getFAccessKind(F_access);
+int getFAccessOffset(F_access a);
+
 typedef struct F_accessList_ *F_accessList;
 
 struct F_frame_ { Temp_label name; F_accessList formals; int localNum; };

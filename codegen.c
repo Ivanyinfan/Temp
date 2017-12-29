@@ -18,7 +18,8 @@ static AS_instrList iList = NULL, last = NULL;
 
 static void emit(AS_instr inst)
 {
-	//fprintf(stdout,"[codegen][emit] %d %s",inst->key,AssemInst(inst));fflush(stdout);
+	////fprintf(stdout,"[codegen][emit] %d %s",inst->key,AssemInst(inst));fflush(stdout);
+	//printASInstr(stdout,inst);
     if (last != NULL)
         last = last->tail = AS_InstrList(inst, NULL);
     else
@@ -31,7 +32,7 @@ static Temp_tempList L(Temp_temp h, Temp_tempList t)
 }
 
 AS_instrList F_codegen(F_frame f, T_stmList stmList) {
-	//fprintf(stdout,"[codegen][F_codegen] begin\n");fflush(stdout);
+	////fprintf(stdout,"[codegen][F_codegen] begin\n");fflush(stdout);
 	AS_instrList list; T_stmList sl;
 	
 	Temp_temp bak_ebx = Temp_newtemp();
@@ -52,7 +53,7 @@ AS_instrList F_codegen(F_frame f, T_stmList stmList) {
     emit(AS_Oper("\n", NULL, L(F_RV(), L(F_ebx(), L(F_esi(), L(F_edi(), NULL)))), AS_Targets(NULL)));
     
     list = iList;iList = NULL;last = NULL;
-    //fprintf(stdout,"[codegen][F_codegen] complete\n");fflush(stdout);
+    ////fprintf(stdout,"[codegen][F_codegen] complete\n");fflush(stdout);
     return list;
 }
 
@@ -62,7 +63,7 @@ static void munchStm(T_stm s)
 	{
 		case T_MOVE:
 		{
-			////fprintf(stdout,"[codegen][munchStm] T_MOVE\n");fflush(stdout);
+			//////fprintf(stdout,"[codegen][munchStm] T_MOVE\n");fflush(stdout);
 			T_exp dst=s->u.MOVE.dst,src=s->u.MOVE.src;
 			//1
 			if(dst->kind == T_TEMP && src->kind == T_MEM && src->u.MEM->kind == T_BINOP && src->u.MEM->u.BINOP.op == T_plus && src->u.MEM->u.BINOP.right->kind == T_CONST)
@@ -110,6 +111,7 @@ static void munchStm(T_stm s)
 			//6
 			else if(dst->kind == T_TEMP)
 			{
+				//fprintf(stdout,"[codegen][munchStm] dst->kind == T_TEMP\n");fflush(stdout);
 				Temp_temp msrc = munchExp(s->u.MOVE.src);
         		emit(AS_Move("movl `s0, `d0\n", L(dst->u.TEMP, NULL), L(msrc, NULL)));
         	}
@@ -124,7 +126,7 @@ static void munchStm(T_stm s)
         }
         case T_JUMP:
         {
-        	////fprintf(stdout,"[codegen][munchStm] T_JUMP\n");fflush(stdout);
+        	//////fprintf(stdout,"[codegen][munchStm] T_JUMP\n");fflush(stdout);
         	T_exp exp=s->u.JUMP.exp;
         	//8
         	if(exp->kind == T_NAME)
@@ -144,7 +146,7 @@ static void munchStm(T_stm s)
         }
         case T_CJUMP:
         {
-        	////fprintf(stdout,"[codegen][munchStm] T_CJUMP\n");fflush(stdout);
+        	//////fprintf(stdout,"[codegen][munchStm] T_CJUMP\n");fflush(stdout);
         	Temp_temp left = munchExp(s->u.CJUMP.left);
         	Temp_temp right = munchExp(s->u.CJUMP.right);
         	switch(s->u.CJUMP.op)
@@ -209,6 +211,7 @@ static void munchStm(T_stm s)
         case T_LABEL:
         {
         	////fprintf(stdout,"[codegen][munchStm] T_LABEL\n");fflush(stdout);
+        	////fprintf(stdout,"[codegen][munchStm] %s\n",Temp_labelstring(s->u.LABEL));fflush(stdout);
         	char *a = checked_malloc(MAXLINE * sizeof(char));
         	sprintf(a, "%s", Temp_labelstring(s->u.LABEL));
         	emit(AS_Label(a, s->u.LABEL));
@@ -216,19 +219,19 @@ static void munchStm(T_stm s)
         }
         case T_SEQ:
         {
-        	////fprintf(stdout,"[codegen][munchStm] T_SEQ\n");fflush(stdout);
+        	//////fprintf(stdout,"[codegen][munchStm] T_SEQ\n");fflush(stdout);
         	munchStm(s->u.SEQ.left);
         	munchStm(s->u.SEQ.right);
         	break;
         }
         case T_EXP:
         {
-        	////fprintf(stdout,"[codegen][munchStm] T_EXP\n");fflush(stdout);
+        	//////fprintf(stdout,"[codegen][munchStm] T_EXP\n");fflush(stdout);
         	munchExp(s->u.EXP);
         	break;
         }
 	}
-	////fprintf(stdout,"[codegen][munchStm] complete\n");fflush(stdout);
+	//////fprintf(stdout,"[codegen][munchStm] complete\n");fflush(stdout);
 }
 
 static Temp_temp munchExp(T_exp e)
@@ -263,22 +266,22 @@ static Temp_temp munchExp(T_exp e)
         		Temp_temp MEM = munchExp(e->u.MEM);
         		emit(AS_Oper("movl (`s0), `d0\n", L(ret, NULL), L(MEM, NULL), AS_Targets(NULL)));
         	}
-        	////fprintf(stdout,"[codegen][munchExp] T_MEM complete\n");fflush(stdout);
+        	//////fprintf(stdout,"[codegen][munchExp] T_MEM complete\n");fflush(stdout);
         	break;
         }
         case T_CALL:
         {
         	//3
-        	////fprintf(stdout,"[codegen][munchExp] T_CALL\n");fflush(stdout);
-        	////fprintf(stdout,"[codegen][munchExp] e->u.CALL.fun->kind=%d\n",e->u.CALL.fun->kind);fflush(stdout);
+        	//fprintf(stdout,"[codegen][munchExp] T_CALL\n");fflush(stdout);
+        	//////fprintf(stdout,"[codegen][munchExp] e->u.CALL.fun->kind=%d\n",e->u.CALL.fun->kind);fflush(stdout);
         	if(e->u.CALL.fun->kind == T_NAME)
         	{
         		Temp_temp rv = F_RV();
         		Temp_label fun = e->u.CALL.fun->u.NAME;
-        		////fprintf(stdout,"[codegen][munchExp] fun=%s\n",Temp_labelstring(fun));fflush(stdout);
+        		//////fprintf(stdout,"[codegen][munchExp] fun=%s\n",Temp_labelstring(fun));fflush(stdout);
         		char *a = checked_malloc(MAXLINE * sizeof(char));
         		munchArgs(e->u.CALL.args);
-        		////fprintf(stdout,"[codegen][munchExp] munchArgs complete\n");fflush(stdout);
+        		//////fprintf(stdout,"[codegen][munchExp] munchArgs complete\n");fflush(stdout);
         		sprintf(a, "call %s\n", Temp_labelstring(fun));
         		//为什么用到ecx，edx？
         		emit(AS_Oper(a, L(rv, L(F_ecx(), L(F_edx(), NULL))), NULL, AS_Targets(NULL)));
@@ -293,17 +296,19 @@ static Temp_temp munchExp(T_exp e)
         		emit(AS_Oper("call *`s0\n", L(rv, L(F_ecx(), L(F_edx(), NULL))), L(s, NULL), AS_Targets(NULL)));
         		emit(AS_Move("movl `s0, `d0\n", L(ret, NULL), L(rv, NULL)));
         	}
-        	////fprintf(stdout,"[codegen][munchExp] T_CALL complete\n");fflush(stdout);
+        	//////fprintf(stdout,"[codegen][munchExp] T_CALL complete\n");fflush(stdout);
         	break;
         }
         case T_BINOP:
         {
         	//fprintf(stdout,"[codegen][munchExp] T_BINOP\n");fflush(stdout);
+        	Temp_temp left = munchExp(e->u.BINOP.left);
+        	//fprintf(stdout,"[codegen][munchExp] munch left complete\n");fflush(stdout);
+        	Temp_temp right = munchExp(e->u.BINOP.right);
+        	//fprintf(stdout,"[codegen][munchExp] munch right complete\n");fflush(stdout);
+        	/* 先把左边给ret，再用ret和右边运算 */
         	switch(e->u.BINOP.op)
         	{
-        		Temp_temp left = munchExp(e->u.BINOP.left);
-        		Temp_temp right = munchExp(e->u.BINOP.right);
-        		/* 先把左边给ret，再用ret和右边运算 */
         		case T_plus:
         		{
         			emit(AS_Move("movl `s0, `d0\n", L(ret, NULL), L(left, NULL)));
@@ -343,7 +348,7 @@ static Temp_temp munchExp(T_exp e)
         	char *a = checked_malloc(MAXLINE * sizeof(char));
         	sprintf(a, "movl $%d, `d0\n", e->u.CONST);
         	emit(AS_Oper(a, L(ret, NULL), NULL, AS_Targets(NULL)));
-        	//fprintf(stdout,"[codegen][munchExp] T_CONST complete\n");fflush(stdout);
+        	////fprintf(stdout,"[codegen][munchExp] T_CONST complete\n");fflush(stdout);
         	break;
         }
         case T_NAME:
@@ -370,10 +375,10 @@ static void munchArgs(T_expList args)
 {
     if (args)
     {
-    	//fprintf(stdout,"[codegen][munchArgs] begin\n");fflush(stdout);
+    	////fprintf(stdout,"[codegen][munchArgs] begin\n");fflush(stdout);
         munchArgs(args->tail);
         Temp_temp s = munchExp(args->head);
-        //fprintf(stdout,"[codegen][munchArgs] s=%d\n",Temp_int(s));fflush(stdout);
+        ////fprintf(stdout,"[codegen][munchArgs] s=%d\n",Temp_int(s));fflush(stdout);
         emit(AS_Oper("pushl `s0\n", NULL, L(s, NULL), AS_Targets(NULL)));
     }
 }

@@ -41,11 +41,11 @@ static U_boolList U_BoolList2(A_fieldList fl);
 F_fragList SEM_transProg(A_exp exp){
 
 	//TODO LAB5: do not forget to add the main frame
-	//fprintf(logFile,"[semant][SEM_transProg] begin\n");fflush(logFile);
+	fprintf(stdout,"[semant][SEM_transProg] begin\n");fflush(stdout);
 	Tr_level main = Tr_outermost();
     struct expty e = transExp(E_base_venv(), E_base_tenv(), exp, main, NULL);
     Tr_newProcFrag(e.exp, main);
-    //fprintf(logFile,"[semant][SEM_transProg] complete\n");fflush(logFile);
+    fprintf(stdout,"[semant][SEM_transProg] complete\n");fflush(stdout);
     return Tr_getResult();
 }
 
@@ -55,7 +55,7 @@ struct expty transVar(S_table venv,S_table tenv,A_var v, Tr_level level, Temp_la
 	{
 		case A_simpleVar:
 		{
-			//fprintf(logFile,"[semant][transVar] A_simpleVar\n");fflush(logFile);
+			fprintf(stdout,"[semant][transVar] A_simpleVar %s\n",S_name(v->u.simple));fflush(stdout);
 			E_enventry x=S_look(venv,v->u.simple);
 			if(x&&x->kind==E_varEntry)
 				return expTy(Tr_simpleVar(x->u.var.access,level),actual_ty(x->u.var.ty));
@@ -64,7 +64,7 @@ struct expty transVar(S_table venv,S_table tenv,A_var v, Tr_level level, Temp_la
 		}
 		case A_fieldVar:
 		{
-			//fprintf(logFile,"[semant][transVar] A_fieldVar\n");fflush(logFile);
+			//fprintf(stdout,"[semant][transVar] A_fieldVar\n");fflush(stdout);
 			struct expty left=transVar(venv,tenv,v->u.field.var,level,l);
 			if(left.ty->kind!=Ty_record)
 			{
@@ -83,7 +83,7 @@ struct expty transVar(S_table venv,S_table tenv,A_var v, Tr_level level, Temp_la
 		}
 		case A_subscriptVar:
 		{
-			//fprintf(logFile,"[semant][transVar] A_subscriptVar\n");fflush(logFile);
+			//fprintf(stdout,"[semant][transVar] A_subscriptVar\n");fflush(stdout);
 			struct expty left=transVar(venv,tenv,v->u.subscript.var,level,l);
             if(left.ty->kind!=Ty_array)
             {
@@ -100,38 +100,39 @@ struct expty transVar(S_table venv,S_table tenv,A_var v, Tr_level level, Temp_la
 
 struct expty transExp(S_table venv,S_table tenv,A_exp a,Tr_level level, Temp_label l)
 {
-	////fprintf(logFile,"[semant][transExp] begin\n");fflush(logFile);
+	//fprintf(stdout,"[semant][transExp] begin\n");fflush(stdout);
 	switch(a->kind)
 	{
 		case A_varExp:
-			//fprintf(logFile,"[semant][transExp] A_varExp\n");fflush(logFile);
+			//fprintf(stdout,"[semant][transExp] A_varExp\n");fflush(stdout);
 			return transVar(venv,tenv,a->u.var,level,l);
 		case A_nilExp:
-			//fprintf(logFile,"[semant][transExp] A_nilExp\n");fflush(logFile);
+			//fprintf(stdout,"[semant][transExp] A_nilExp\n");fflush(stdout);
 			return expTy(Tr_Nil(),Ty_Nil());
 		case A_intExp:
-			//fprintf(logFile,"[semant][transExp] A_intExp\n");fflush(logFile);
+			//fprintf(stdout,"[semant][transExp] A_intExp\n");fflush(stdout);
 			return expTy(Tr_Int(a->u.intt),Ty_Int());
 		case A_stringExp:
-			//fprintf(logFile,"[semant][transExp] A_stringExp\n");fflush(logFile);
+			fprintf(stdout,"[semant][transExp] A_stringExp\n");fflush(stdout);
+			fprintf(stdout,"[semant][transExp] strlen=%d\n",strlen(a->u.stringg));fflush(stdout);
 			return expTy(Tr_String(a->u.stringg),Ty_String());
 		case A_callExp:
 		{
-			//fprintf(logFile,"[semant][transExp] A_callExp\n");fflush(logFile);
+			//fprintf(stdout,"[semant][transExp] A_callExp\n");fflush(stdout);
 			E_enventry x=S_look(venv,a->u.call.func);
 			if(!x)
 			{
 				EM_error(a->pos,"undefined function %s", S_name(a->u.call.func));
 				return expTy(Tr_Nil(),Ty_Int());
 			}
-			//fprintf(logFile,"[semant][transExp] fun=%s\n",Temp_labelstring(x->u.fun.label));fflush(logFile);
+			//fprintf(stdout,"[semant][transExp] fun=%s\n",Temp_labelstring(x->u.fun.label));fflush(stdout);
 			A_expList args=a->u.call.args;
 			Ty_tyList formals=x->u.fun.formals;
 			Tr_expList argss = NULL;
 			while(args&&formals)
 			{
 				struct expty exp=transExp(venv,tenv,args->head,level,NULL);
-				////fprintf(logFile,"[semant][transExp] A_callExp transExp complete\n");fflush(logFile);
+				//fprintf(stdout,"[semant][transExp] A_callExp transExp complete\n");fflush(stdout);
 				if(!TypeMatch(formals->head,exp.ty))
 					EM_error(args->head->pos,"para type mismatch");
 				args=args->tail;
@@ -142,14 +143,14 @@ struct expty transExp(S_table venv,S_table tenv,A_exp a,Tr_level level, Temp_lab
 				EM_error(a->pos,"too many params in function %s", S_name(a->u.call.func));
 			if(formals)
 				EM_error(a->pos,"too less params in function %s", S_name(a->u.call.func));
-			//fprintf(stdout,"[semant][transExp] level=%d,cur=%d\n",getKey(x->u.fun.level),getKey(level));fflush(logFile);
+			//fprintf(stdout,"[semant][transExp] level=%d,cur=%d\n",getKey(x->u.fun.level),getKey(level));fflush(stdout);
 			if(!x->u.fun.result)
 				return expTy(Tr_Call(x->u.fun.label,argss,x->u.fun.level,level),Ty_Void());
 			return expTy(Tr_Call(x->u.fun.label,argss,x->u.fun.level,level),x->u.fun.result);
 		}
 		case A_opExp:
 		{
-			//fprintf(logFile,"[semant][transExp] A_opExp\n");fflush(logFile);
+			//fprintf(stdout,"[semant][transExp] A_opExp\n");fflush(stdout);
 			A_oper oper = a->u.op.oper;
 			struct expty left=transExp(venv,tenv,a->u.op.left,level,l);
 			struct expty right=transExp(venv,tenv,a->u.op.right,level,l);
@@ -175,7 +176,7 @@ struct expty transExp(S_table venv,S_table tenv,A_exp a,Tr_level level, Temp_lab
 		}
 		case A_recordExp:
 		{
-			//fprintf(logFile,"[semant][transExp] A_recordExp\n");fflush(logFile);
+			//fprintf(stdout,"[semant][transExp] A_recordExp\n");fflush(stdout);
 			Ty_ty ty=actual_ty(S_look(tenv,a->u.record.typ));
 			if(!ty)
 			{
@@ -210,24 +211,24 @@ struct expty transExp(S_table venv,S_table tenv,A_exp a,Tr_level level, Temp_lab
 		}
 	    case A_seqExp:
 	    {
-	    	//fprintf(logFile,"[semant][transExp] A_seqExp\n");fflush(logFile);
+	    	fprintf(stdout,"[semant][transExp] A_seqExp\n");fflush(stdout);
 	    	A_expList seq;
 	    	struct expty tmp;
 	    	Ty_ty ty = Ty_Void();
             Tr_exp exp = Tr_Nil();
 	    	for(seq=a->u.seq;seq;seq=seq->tail)
 	    	{
-	    		////fprintf(logFile,"[transExp] A_seqExp transExp begin\n");fflush(logFile);
+	    		fprintf(stdout,"[semant][transExp] A_seqExp transExp begin\n");fflush(stdout);
 	    		tmp=transExp(venv,tenv,seq->head,level,l);
 	    		ty=tmp.ty;
 	    		exp=Tr_Seq(exp,tmp.exp);
-	    		////fprintf(logFile,"[transExp] A_seqExp transExp complete\n");fflush(logFile);
+	    		fprintf(stdout,"[semant][transExp] A_seqExp transExp complete\n");fflush(stdout);
 	    	}
 	    	return expTy(exp,ty);
 	    }
 	    case A_assignExp:
 	    {
-	    	//fprintf(logFile,"[semant][transExp] A_assignExp\n");fflush(logFile);
+	    	//fprintf(stdout,"[semant][transExp] A_assignExp\n");fflush(stdout);
 	    	struct expty vty=transVar(venv,tenv,a->u.assign.var,level,l);
             struct expty ety=transExp(venv,tenv,a->u.assign.exp,level,l);
             //fprintf(stderr,"[transExp] transExp finish\n");
@@ -244,19 +245,20 @@ struct expty transExp(S_table venv,S_table tenv,A_exp a,Tr_level level, Temp_lab
         }
 	    case A_ifExp:
 	    {
-	    	//fprintf(logFile,"[semant][transExp] A_ifExp\n");fflush(logFile);
+	    	fprintf(stdout,"[semant][transExp] A_ifExp\n");fflush(stdout);
 	    	struct expty test=transExp(venv,tenv,a->u.iff.test,level,l);
+	    	fprintf(stdout,"[transExp] A_ifExp trans test complete\n");fflush(stdout);
             if(test.ty->kind!=Ty_int)
             	EM_error(a->u.iff.test->pos, "integer required");
             struct expty then = transExp(venv, tenv, a->u.iff.then,level,l);
-            ////fprintf(logFile,"[transExp] A_ifExp trans then complete\n");fflush(logFile);
+            //fprintf(stdout,"[transExp] A_ifExp trans then complete\n");fflush(stdout);
 			if(a->u.iff.elsee)
 			{
 				struct expty elsee = transExp(venv, tenv, a->u.iff.elsee,level,l);
-				////fprintf(logFile,"[transExp] A_ifExp trans elsee complete\n");fflush(logFile);
+				//fprintf(stdout,"[transExp] A_ifExp trans elsee complete\n");fflush(stdout);
                 if (!TypeMatch(then.ty, elsee.ty))
                 	EM_error(a->pos, "then exp and else exp type mismatch");
-                ////fprintf(logFile,"[transExp] A_ifExp transExp complete\n");fflush(logFile);
+                //fprintf(stdout,"[transExp] A_ifExp transExp complete\n");fflush(stdout);
                 return expTy(Tr_If(test.exp,then.exp,elsee.exp),then.ty);
             }
             if(then.ty->kind!=Ty_void)
@@ -265,7 +267,7 @@ struct expty transExp(S_table venv,S_table tenv,A_exp a,Tr_level level, Temp_lab
         }
 	    case A_whileExp:
 	    {
-			//fprintf(logFile,"[semant][transExp] A_whileExp\n");fflush(logFile);
+			//fprintf(stdout,"[semant][transExp] A_whileExp\n");fflush(stdout);
 	    	struct expty test = transExp(venv, tenv, a->u.whilee.test,level,l);
 	    	if (test.ty->kind != Ty_int)
             	EM_error(a->u.whilee.test->pos, "integer required");
@@ -277,51 +279,51 @@ struct expty transExp(S_table venv,S_table tenv,A_exp a,Tr_level level, Temp_lab
         }
 	    case A_forExp:
 	    {
-	    	//fprintf(logFile,"[semant][transExp] A_forExp\n");fflush(logFile);
+	    	//fprintf(stdout,"[semant][transExp] A_forExp\n");fflush(stdout);
 	    	struct expty lo = transExp(venv, tenv, a->u.forr.lo,level,l);
             struct expty hi = transExp(venv, tenv, a->u.forr.hi,level,l);
-            ////fprintf(logFile,"[transExp] transExp hi complete\n");fflush(logFile);
+            //fprintf(stdout,"[transExp] transExp hi complete\n");fflush(stdout);
             if(lo.ty->kind!=Ty_int||hi.ty->kind!=Ty_int)
             	EM_error(a->u.forr.lo->pos, "for exp's range type is not integer");
             S_beginScope(venv);
             Tr_access access = Tr_allocLocal(level, a->u.forr.escape);
             S_enter(venv,a->u.forr.var,E_VarEntry(access,Ty_Int()));
             Temp_label done = Temp_newlabel();
-            ////fprintf(logFile,"[transExp] A_forExp transExp body begin\n");fflush(logFile);
+            //fprintf(stdout,"[transExp] A_forExp transExp body begin\n");fflush(stdout);
             struct expty body=transExp(venv, tenv, a->u.forr.body,level,done);
-            ////fprintf(logFile,"[transExp] A_forExp transExp body complete\n");fflush(logFile);
+            //fprintf(stdout,"[transExp] A_forExp transExp body complete\n");fflush(stdout);
             if (body.ty->kind != Ty_void)
             	EM_error(a->u.forr.body->pos, "while body must produce no value");
-            ////fprintf(logFile,"[transExp] A_forExp body type check complete\n");fflush(logFile);
+            //fprintf(stdout,"[transExp] A_forExp body type check complete\n");fflush(stdout);
             S_endScope(venv);
-            ////fprintf(logFile,"[transExp] A_forExp complete\n");fflush(logFile);
+            //fprintf(stdout,"[transExp] A_forExp complete\n");fflush(stdout);
             return expTy(Tr_For(access, level, lo.exp, hi.exp, body.exp,done),Ty_Void());
         }
 	    case A_breakExp:
-	    	//fprintf(logFile,"[semant][transExp] A_breakExp\n");fflush(logFile);
+	    	//fprintf(stdout,"[semant][transExp] A_breakExp\n");fflush(stdout);
 	    	return expTy(Tr_Break(l),Ty_Void());
 	    case A_letExp:
 	    {
-	    	//fprintf(logFile,"[semant][transExp] A_letExp\n");fflush(logFile);
+	    	//fprintf(stdout,"[semant][transExp] A_letExp\n");fflush(stdout);
 	    	A_decList decs;
 	    	Tr_exp exp = Tr_Nil();
 	    	S_beginScope(venv);
             S_beginScope(tenv);
             for (decs = a->u.let.decs; decs; decs = decs->tail)
             	exp = Tr_Seq(exp,transDec(venv, tenv, decs->head,level,l));
-            ////fprintf(logFile,"[transExp] transDec finish\n");fflush(logFile);
+            //fprintf(stdout,"[transExp] transDec finish\n");fflush(stdout);
             struct expty body = transExp(venv, tenv, a->u.let.body,level,l);
             //fprintf(stderr,"[transExp] transExp complete\n");
             exp = Tr_Seq(exp, body.exp);
             S_endScope(tenv);
             S_endScope(venv);
-            //fprintf(logFile,"[semant][transExp]exp->kind=%d\n",getKind(exp));fflush(logFile);
-            //printStmList(logFile, T_StmList(body, NULL));
+            //fprintf(stdout,"[semant][transExp]exp->kind=%d\n",getKind(exp));fflush(stdout);
+            //printStmList(stdout, T_StmList(body, NULL));
             return expTy(exp,body.ty);
         }
 	    case A_arrayExp:
 	    {
-			//fprintf(logFile,"[semant][transExp] A_arrayExp\n");fflush(logFile);
+			//fprintf(stdout,"[semant][transExp] A_arrayExp\n");fflush(stdout);
 	    	Ty_ty typ = actual_ty(S_look(tenv,a->u.array.typ));
 	    	if (typ->kind != Ty_array)
 	    	{
@@ -345,9 +347,9 @@ Tr_exp transDec(S_table venv, S_table tenv, A_dec d, Tr_level level, Temp_label 
 	{
 		case A_varDec:
 		{
-			//fprintf(logFile,"[semant][transDec] A_varDec\n");fflush(logFile);
+			//fprintf(stdout,"[semant][transDec] A_varDec\n");fflush(stdout);
 			struct expty init = transExp(venv, tenv, d->u.var.init,level,l);
-			////fprintf(logFile,"[transDec] transExp complete\n");fflush(logFile);
+			//fprintf(stdout,"[transDec] transExp complete\n");fflush(stdout);
             Ty_ty typ = actual_ty(S_look(tenv, d->u.var.typ));
             Tr_access access = Tr_allocLocal(level, d->u.var.escape);
            	if(typ)
@@ -368,11 +370,11 @@ Tr_exp transDec(S_table venv, S_table tenv, A_dec d, Tr_level level, Temp_label 
         }
         case A_functionDec:
         {
-        	//fprintf(logFile,"[semant][transDec] A_functionDec\n");fflush(logFile);
+        	//fprintf(stdout,"[semant][transDec] A_functionDec\n");fflush(stdout);
         	A_fundecList fun;
         	Ty_ty resultTy;
         	for (fun = d->u.function; fun; fun = fun->tail)
-        	{
+        	{//对列表中每个函数定义
             	resultTy = S_look(tenv,fun->head->result);
                 if(!resultTy)
                 	resultTy = Ty_Void();
@@ -380,35 +382,41 @@ Tr_exp transDec(S_table venv, S_table tenv, A_dec d, Tr_level level, Temp_label 
                 U_boolList formalEscape = U_BoolList2(fun->head->params);
                 A_fundecList funl;
                 for(funl=fun->tail;funl;funl=funl->tail)
-                {
+                {//对之后的每个函数定义
                 	if(funl->head->name==fun->head->name)
                 	{
                 		EM_error(d->pos, "two functions have the same name");
                 		break;
                 	}
                 }
-                Tr_level newlevel=Tr_newLevel(level,Temp_newlabel(),formalEscape);
-                ////fprintf(logFile,"[semant][transDec] level %s=%d\n",S_name(fun->head->name),getKey(level));fflush(logFile);
-                S_enter(venv, fun->head->name, E_FunEntry(newlevel,Temp_newlabel(),formalTy, resultTy));
+                Temp_label newlabel=Temp_newlabel();
+                fprintf(stdout,"[semant][transDec] %s=%s\n",S_name(fun->head->name),Temp_labelstring(newlabel));fflush(stdout);
+                Tr_level newlevel=Tr_newLevel(level,newlabel,formalEscape);
+                //fprintf(stdout,"[semant][transDec] level %s=%d\n",S_name(fun->head->name),getKey(level));fflush(stdout);
+                S_enter(venv, fun->head->name, E_FunEntry(newlevel,newlabel,formalTy, resultTy));
 			}
-			////fprintf(logFile,"[transDec] first trans complete\n");fflush(logFile);
+			//fprintf(stdout,"[transDec] first trans complete\n");fflush(stdout);
 			Ty_tyList formals;
             E_enventry fe;
             A_fieldList params;
             struct expty exp;
             Tr_accessList args;
 			for (fun = d->u.function; fun; fun = fun->tail)
-			{
+			{//再遍历一遍，对列表中每个函数定义
 				S_beginScope(venv);
                 fe = S_look(venv, fun->head->name);
                 formals = fe->u.fun.formals;
                 resultTy = fe->u.fun.result;
                 args = Tr_formals(fe->u.fun.level);
                 for(params=fun->head->params;params;params=params->tail,formals=formals->tail,args=args->tail)
+                {
+                	//fprintf(stdout,"[semant][transDec] S_enter %s->kind=%d\n",S_name(params->head->name),getFAccessKind(getAccess(args->head)));fflush(stdout);
+                	//fprintf(stdout,"[semant][transDec] S_enter %s->offset=%d\n",S_name(params->head->name),getFAccessOffset(getAccess(args->head)));fflush(stdout);
                 	S_enter(venv, params->head->name, E_VarEntry(args->head,formals->head));
-                ////fprintf(logFile,"[transDec] transExp %s body begin\n",S_name(fun->head->name));fflush(logFile);
+                }
+                //fprintf(stdout,"[transDec] transExp %s body begin\n",S_name(fun->head->name));fflush(stdout);
                 exp = transExp(venv, tenv, fun->head->body,fe->u.fun.level,NULL);
-                ////fprintf(logFile,"[transDec] transExp %s body complete\n",S_name(fun->head->name));fflush(logFile);
+                //fprintf(stdout,"[transDec] transExp %s body complete\n",S_name(fun->head->name));fflush(stdout);
                 if (!TypeMatch(exp.ty, resultTy))
                 {
                 	if (resultTy->kind == Ty_void)
@@ -419,11 +427,12 @@ Tr_exp transDec(S_table venv, S_table tenv, A_dec d, Tr_level level, Temp_label 
                 S_endScope(venv);
                 Tr_newProcFrag(exp.exp, fe->u.fun.level);
             }
+            
             return Tr_Nil();
 		}
 		case A_typeDec:
 		{
-			//fprintf(logFile,"[semant][transDec] A_typeDec\n");fflush(logFile);
+			//fprintf(stdout,"[semant][transDec] A_typeDec\n");fflush(stdout);
 			A_nametyList type;
 			for (type = d->u.type; type; type = type->tail)
 			{

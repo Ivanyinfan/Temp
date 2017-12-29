@@ -14,6 +14,7 @@ int getKind(Tr_exp exp);
 typedef struct Tr_expList_ *Tr_expList;
 
 typedef struct Tr_access_ *Tr_access;
+F_access getAccess(Tr_access a);
 
 typedef struct Tr_accessList_ *Tr_accessList;
 

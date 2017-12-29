@@ -29,6 +29,7 @@ static int labels = 0;
 Temp_label Temp_newlabel(void)
 {char buf[100];
  sprintf(buf,"L%d",labels++);
+ //fprintf(stdout,"[temp][Temp_newlabel]%s\n",buf);fflush(stdout);
  return Temp_namedlabel(String(buf));
 }
 
@@ -108,6 +109,13 @@ Temp_labelList Temp_LabelList(Temp_label h, Temp_labelList t)
 {Temp_labelList p = (Temp_labelList) checked_malloc(sizeof (*p));
  p->head=h; p->tail=t;
  return p;
+}
+
+void printTempLabelList(FILE *out,Temp_labelList l)
+{
+	for(;l;l=l->tail)
+		fprintf(out,"%s ",Temp_labelstring(l->head));
+	fprintf(out,"\n");fflush(out);
 }
 
 static FILE *outfile;

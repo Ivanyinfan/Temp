@@ -139,7 +139,7 @@ A_exp A_ForExp(A_pos pos, S_symbol var, A_exp lo, A_exp hi, A_exp body)
  p->u.forr.lo=lo;
  p->u.forr.hi=hi;
  p->u.forr.body=body;
- p->u.forr.escape=TRUE;
+ p->u.forr.escape=FALSE;
  return p;
 }
 

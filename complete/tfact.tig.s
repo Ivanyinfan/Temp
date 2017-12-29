@@ -14,18 +14,14 @@ movl %esi, %esi
 
 movl %edi, %edi
 
-L6:
-movl $9, %eax
-
-pushl %eax
-
-movl $4, %eax
+L5:
+movl $10, %eax
 
 pushl %eax
 
 pushl %ebp
 
-call L1
+call L0
 
 movl %eax, %eax
 
@@ -39,9 +35,9 @@ movl %eax, %eax
 
 movl %eax, %eax
 
-jmp L5
+jmp L4
 
-L5:
+L4:
 movl %edi, %edi
 
 movl %esi, %esi
@@ -63,40 +59,72 @@ pushl %ebp
 
 movl %esp,%ebp
 
-subl $0,%esp
+subl $4,%esp
 
 movl %ebx, %ebx
 
+movl %ebx, -4(%ebp)
+
 movl %esi, %esi
 
 movl %edi, %edi
-
-L8:
-movl 8(%ebp), %ecx
-
-movl 12(%ebp), %edx
-
-cmp %edx, %ecx
-
-jg L2
-
-L3:
-movl 12(%ebp), %ecx
-
-L4:
-movl %ecx, %eax
-
-jmp L7
-
-L2:
-movl 8(%ebp), %ecx
-
-jmp L4
 
 L7:
+movl 12(%ebp), %ebx
+
+movl $0, %ecx
+
+cmp %ecx, %ebx
+
+je L1
+
+L2:
+movl 12(%ebp), %ebx
+
+movl 12(%ebp), %eax
+
+movl $1, %ecx
+
+movl %eax, %eax
+
+subl %ecx, %eax
+
+pushl %eax
+
+movl 8(%ebp), %eax
+
+pushl %eax
+
+call L0
+
+movl %eax, %eax
+
+movl %eax, %eax
+
+movl %ebx, %ebx
+
+imul %eax, %ebx
+
+movl %ebx, %ebx
+
+L3:
+movl %ebx, %eax
+
+jmp L6
+
+L1:
+movl $1, %ebx
+
+movl %ebx, %ebx
+
+jmp L3
+
+L6:
 movl %edi, %edi
 
 movl %esi, %esi
+
+movl -4(%ebp), %ebx
 
 movl %ebx, %ebx
 

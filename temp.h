@@ -24,6 +24,7 @@ string Temp_labelstring(Temp_label s);
 typedef struct Temp_labelList_ *Temp_labelList;
 struct Temp_labelList_ { Temp_label head; Temp_labelList tail;};
 Temp_labelList Temp_LabelList(Temp_label h, Temp_labelList t);
+void printTempLabelList(FILE *out,Temp_labelList l);
 
 typedef struct Temp_map_ *Temp_map;
 Temp_map Temp_empty(void);

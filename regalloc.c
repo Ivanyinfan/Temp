@@ -41,7 +41,7 @@ static Live_moveList activeMoves;     //还未做好合并准备的传送指令�
 
 struct RA_result RA_regAlloc(F_frame f, AS_instrList il) {
 	//your code here
-	//fprintf(stdout,"[regalloc][RA_regAllocp] begin\n");fflush(stdout);
+	fprintf(stdout,"[regalloc][RA_regAllocp] begin\n");fflush(stdout);
 	struct RA_result ret;
 	struct Live_graph live_graph;
     bool done = FALSE;
@@ -71,6 +71,7 @@ struct RA_result RA_regAlloc(F_frame f, AS_instrList il) {
 
     ret.il = il;
 	ret.coloring = generate_map();
+	fprintf(stdout,"[regalloc][RA_regAllocp] complete\n");fflush(stdout);
 	return ret;
 }
 
