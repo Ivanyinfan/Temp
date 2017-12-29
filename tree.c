@@ -16,6 +16,16 @@ int TExpListLen(T_expList el)
 	return 1+TExpListLen(el->tail);
 }
 
+//将b放在a后面
+T_expList TExp_splice(T_expList a, T_expList b)
+{
+  T_expList p;
+  if (a==NULL) return b;
+  for(p=a; p->tail!=NULL; p=p->tail) ;
+  p->tail=b;
+  return a;
+}
+
 T_stmList T_StmList(T_stm head, T_stmList tail)
 {T_stmList p = (T_stmList) checked_malloc (sizeof *p);
  p->head=head; p->tail=tail;

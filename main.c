@@ -153,7 +153,7 @@ int main(int argc, string *argv)
    /* convert the filename */
    sprintf(outfile, "%s.s", argv[1]);
    out = fopen(outfile, "w");
-   if(!out)printf("error");
+   
    /* Chapter 8, 9, 10, 11 & 12 */
    for (;frags;frags=frags->tail)
      if (frags->head->kind == F_procFrag) {

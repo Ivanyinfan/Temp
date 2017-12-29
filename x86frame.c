@@ -216,8 +216,11 @@ AS_proc F_procEntryExit3(F_frame f, AS_instrList body)
 	AS_instr inst1=AS_Oper("pushl %ebp\n",NULL,Temp_TempList(F_FP(),NULL),AS_Targets(NULL));
 	AS_instr inst2=AS_Move("movl %esp,%ebp\n",Temp_TempList(F_FP(),NULL),NULL);
 	string assem=checked_malloc(20);
-	sprintf(assem,"subl $%d,%%ebp\n",f->localNum*F_wordSize);
+	sprintf(assem,"subl $%d,%%esp\n",f->localNum*F_wordSize);
 	AS_instr inst3=AS_Oper(assem,NULL,Temp_TempList(F_FP(),NULL),AS_Targets(NULL));
 	body=AS_InstrList(inst1,AS_InstrList(inst2,AS_InstrList(inst3,body)));
+	AS_instr inst4=AS_Oper("leave\n",NULL,NULL,AS_Targets(NULL));
+	AS_instr inst5=AS_Oper("ret\n",NULL,NULL,AS_Targets(NULL));
+	AS_splice(body,AS_InstrList(inst4,AS_InstrList(inst5,NULL)));
 	return AS_Proc(NULL,body,NULL);
 }

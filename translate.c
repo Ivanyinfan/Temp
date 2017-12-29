@@ -471,7 +471,7 @@ static T_expList T_ExpList2(Tr_expList args)
 {
 	if(!args)
 		return NULL;
-	return T_ExpList(unEx(args->head),T_ExpList2(args->tail));
+	return TExp_splice(T_ExpList2(args->tail),T_ExpList(unEx(args->head),NULL));
 }
 
 static T_stm Fields(Temp_temp r, int num, Tr_expList fields)
