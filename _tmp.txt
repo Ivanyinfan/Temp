@@ -1,4 +1,1 @@
-[runtime][initArray]size=8,init=0
-[runtime][initArray]size=8,init=0
-[runtime][initArray]size=15,init=0
-[runtime][initArray]size=15,init=0
+109876543

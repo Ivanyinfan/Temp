@@ -538,7 +538,7 @@ static void RewriteProgram(F_frame f, AS_instrList *pil)
 
 static Temp_map generate_map()
 {
-	////fprintf(stdout,"[regalloc][generate_map] begin\n");fflush(stdout);
+	fprintf(stdout,"[regalloc][generate_map] begin\n");fflush(stdout);
     Temp_map res = Temp_empty();
     G_nodeList p = G_nodes(graph);
     for (; p; p = p->tail)
@@ -548,7 +548,9 @@ static Temp_map generate_map()
         char * a = checked_malloc(sizeof(char) * MAXLINE);
         sprintf(a, "%s%d", reg_names[*t], Live_gtemp(p->head)->num);
         */
-        Temp_enter(res, Live_gtemp(p->head), reg_names[*t]);
+        Temp_temp temp=Live_gtemp(p->head);
+        fprintf(stdout,"[regalloc][generate_map] %d=%s\n",temp->num,reg_names[*t]);fflush(stdout);
+        Temp_enter(res, temp, reg_names[*t]);
     }
 
     /* ebp */

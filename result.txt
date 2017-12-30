@@ -4,11 +4,160 @@ make: 'tiger-compiler' is up to date.
 [main][doProc]for function tigermain:
 -------==== before linerize =====-----
 -------====IR tree=====-----
+ MOVE(
+  MEM(
+   BINOP(PLUS,
+    TEMP t100,
+    CONST -4)),
+  CONST 8)
+ MOVE(
+  TEMP t122,
+  BINOP(PLUS,
+   TEMP t100,
+   CONST -8))
+ MOVE(
+  TEMP t121,
+  CALL(
+   NAME initArray,
+    MEM(
+     BINOP(PLUS,
+      TEMP t100,
+      CONST -4)),
+    CONST 0))
+ MOVE(
+  MEM(
+   TEMP t122),
+  TEMP t121)
+ MOVE(
+  TEMP t120,
+  BINOP(PLUS,
+   TEMP t100,
+   CONST -12))
+ MOVE(
+  TEMP t119,
+  CALL(
+   NAME initArray,
+    MEM(
+     BINOP(PLUS,
+      TEMP t100,
+      CONST -4)),
+    CONST 0))
+ MOVE(
+  MEM(
+   TEMP t120),
+  TEMP t119)
+ MOVE(
+  TEMP t118,
+  BINOP(PLUS,
+   TEMP t100,
+   CONST -16))
+ MOVE(
+  TEMP t117,
+  CALL(
+   NAME initArray,
+    BINOP(MINUS,
+     BINOP(PLUS,
+      MEM(
+       BINOP(PLUS,
+        TEMP t100,
+        CONST -4)),
+      MEM(
+       BINOP(PLUS,
+        TEMP t100,
+        CONST -4))),
+     CONST 1),
+    CONST 0))
+ MOVE(
+  MEM(
+   TEMP t118),
+  TEMP t117)
+ MOVE(
+  TEMP t116,
+  BINOP(PLUS,
+   TEMP t100,
+   CONST -20))
+ MOVE(
+  TEMP t115,
+  CALL(
+   NAME initArray,
+    BINOP(MINUS,
+     BINOP(PLUS,
+      MEM(
+       BINOP(PLUS,
+        TEMP t100,
+        CONST -4)),
+      MEM(
+       BINOP(PLUS,
+        TEMP t100,
+        CONST -4))),
+     CONST 1),
+    CONST 0))
+ MOVE(
+  MEM(
+   TEMP t116),
+  TEMP t115)
+ MOVE(
+  TEMP t106,
+  CALL(
+   NAME try,
+    TEMP t100,
+    CONST 0))
 -----=======before RA========------
 [flowgraph][FG_AssemFlowGraph] begin
 [flowgraph][FG_AssemFlowGraph] complete
 [flowgraph][FG_AssemFlowGraph] begin
 [flowgraph][FG_AssemFlowGraph] complete
+[regalloc][generate_map] begin
+[regalloc][generate_map] 106=%eax
+[regalloc][generate_map] 126=%ebx
+[regalloc][generate_map] 139=%ecx
+[regalloc][generate_map] 138=%edx
+[regalloc][generate_map] 127=%esi
+[regalloc][generate_map] 128=%edi
+[regalloc][generate_map] 182=%ebx
+[regalloc][generate_map] 124=%esi
+[regalloc][generate_map] 125=%edi
+[regalloc][generate_map] 129=%eax
+[regalloc][generate_map] 133=%eax
+[regalloc][generate_map] 131=%ebx
+[regalloc][generate_map] 122=%ebx
+[regalloc][generate_map] 135=%eax
+[regalloc][generate_map] 136=%eax
+[regalloc][generate_map] 134=%eax
+[regalloc][generate_map] 121=%eax
+[regalloc][generate_map] 144=%ebx
+[regalloc][generate_map] 142=%eax
+[regalloc][generate_map] 120=%eax
+[regalloc][generate_map] 146=%ebx
+[regalloc][generate_map] 147=%ebx
+[regalloc][generate_map] 145=%eax
+[regalloc][generate_map] 119=%eax
+[regalloc][generate_map] 153=%ebx
+[regalloc][generate_map] 151=%eax
+[regalloc][generate_map] 118=%eax
+[regalloc][generate_map] 155=%ebx
+[regalloc][generate_map] 158=%ebx
+[regalloc][generate_map] 160=%ecx
+[regalloc][generate_map] 157=%ebx
+[regalloc][generate_map] 162=%ecx
+[regalloc][generate_map] 156=%ebx
+[regalloc][generate_map] 154=%eax
+[regalloc][generate_map] 117=%eax
+[regalloc][generate_map] 167=%ebx
+[regalloc][generate_map] 165=%eax
+[regalloc][generate_map] 116=%eax
+[regalloc][generate_map] 169=%ebx
+[regalloc][generate_map] 172=%ebx
+[regalloc][generate_map] 174=%ecx
+[regalloc][generate_map] 171=%ebx
+[regalloc][generate_map] 176=%ecx
+[regalloc][generate_map] 170=%ebx
+[regalloc][generate_map] 168=%eax
+[regalloc][generate_map] 115=%eax
+[regalloc][generate_map] 180=%eax
+[regalloc][generate_map] 179=%eax
+[regalloc][generate_map] 183=%ebx
+[regalloc][generate_map] 100=%eax
 [X86frame][F_procEntryExit3] begin
 [X86frame][F_procEntryExit3] complete
 [main][doProc]==== write file ====
@@ -16,557 +165,668 @@ make: 'tiger-compiler' is up to date.
 [main][doProc]for function try:
 -------==== before linerize =====-----
 -------====IR tree=====-----
+ EXP(
+  CALL(
+   NAME print,
+    NAME L12))
+ EXP(
+  CALL(
+   NAME flush))
+ CJUMP(EQ,
+  MEM(
+   BINOP(PLUS,
+    TEMP t100,
+    CONST 12)),
+  MEM(
+   BINOP(PLUS,
+    MEM(
+     BINOP(PLUS,
+      TEMP t100,
+      CONST 8)),
+    CONST -4)),
+  ifTrueL4,ifFalseL4)
+ LABEL ifTrueL4
+ MOVE(
+  TEMP t114,
+  CALL(
+   NAME printboard,
+    MEM(
+     BINOP(PLUS,
+      TEMP t100,
+      CONST 8))))
+ JUMP(
+  NAME L23)
+ LABEL ifFalseL4
+ MOVE(
+  TEMP t107,
+  CONST 0)
+ MOVE(
+  TEMP t113,
+  BINOP(MINUS,
+   MEM(
+    BINOP(PLUS,
+     MEM(
+      BINOP(PLUS,
+       TEMP t100,
+       CONST 8)),
+     CONST -4)),
+   CONST 1))
+ CJUMP(GT,
+  TEMP t107,
+  TEMP t113,
+  L13,L21)
+ LABEL L21
+ CJUMP(EQ,
+  MEM(
+   BINOP(PLUS,
+    MEM(
+     BINOP(PLUS,
+      MEM(
+       BINOP(PLUS,
+        TEMP t100,
+        CONST 8)),
+      CONST -8)),
+    BINOP(TIMES,
+     TEMP t107,
+     CONST 4))),
+  CONST 0,
+  ifTrueL1,ifFalseL1)
+ LABEL ifTrueL1
+ MOVE(
+  TEMP t109,
+  CONST 1)
+ CJUMP(EQ,
+  MEM(
+   BINOP(PLUS,
+    MEM(
+     BINOP(PLUS,
+      MEM(
+       BINOP(PLUS,
+        TEMP t100,
+        CONST 8)),
+      CONST -16)),
+    BINOP(TIMES,
+     BINOP(PLUS,
+      TEMP t107,
+      MEM(
+       BINOP(PLUS,
+        TEMP t100,
+        CONST 12))),
+     CONST 4))),
+  CONST 0,
+  L15,L16)
+ LABEL L16
+ MOVE(
+  TEMP t109,
+  CONST 0)
+ LABEL L15
+ MOVE(
+  TEMP t108,
+  TEMP t109)
+ JUMP(
+  NAME L14)
+ LABEL ifFalseL1
+ MOVE(
+  TEMP t108,
+  CONST 0)
+ JUMP(
+  NAME L14)
+ LABEL L14
+ CJUMP(NE,
+  TEMP t108,
+  CONST 0,
+  ifTrueL2,ifFalseL2)
+ LABEL ifTrueL2
+ MOVE(
+  TEMP t111,
+  CONST 1)
+ CJUMP(EQ,
+  MEM(
+   BINOP(PLUS,
+    MEM(
+     BINOP(PLUS,
+      MEM(
+       BINOP(PLUS,
+        TEMP t100,
+        CONST 8)),
+      CONST -20)),
+    BINOP(TIMES,
+     BINOP(MINUS,
+      BINOP(PLUS,
+       TEMP t107,
+       CONST 7),
+      MEM(
+       BINOP(PLUS,
+        TEMP t100,
+        CONST 12))),
+     CONST 4))),
+  CONST 0,
+  L18,L19)
+ LABEL L19
+ MOVE(
+  TEMP t111,
+  CONST 0)
+ LABEL L18
+ MOVE(
+  TEMP t110,
+  TEMP t111)
+ JUMP(
+  NAME L17)
+ LABEL ifFalseL2
+ MOVE(
+  TEMP t110,
+  CONST 0)
+ JUMP(
+  NAME L17)
+ LABEL L17
+ CJUMP(NE,
+  TEMP t110,
+  CONST 0,
+  ifTrueL3,ifFalseL3)
+ LABEL ifTrueL3
+ MOVE(
+  MEM(
+   BINOP(PLUS,
+    MEM(
+     BINOP(PLUS,
+      MEM(
+       BINOP(PLUS,
+        TEMP t100,
+        CONST 8)),
+      CONST -8)),
+    BINOP(TIMES,
+     TEMP t107,
+     CONST 4))),
+  CONST 1)
+ MOVE(
+  MEM(
+   BINOP(PLUS,
+    MEM(
+     BINOP(PLUS,
+      MEM(
+       BINOP(PLUS,
+        TEMP t100,
+        CONST 8)),
+      CONST -16)),
+    BINOP(TIMES,
+     BINOP(PLUS,
+      TEMP t107,
+      MEM(
+       BINOP(PLUS,
+        TEMP t100,
+        CONST 12))),
+     CONST 4))),
+  CONST 1)
+ MOVE(
+  MEM(
+   BINOP(PLUS,
+    MEM(
+     BINOP(PLUS,
+      MEM(
+       BINOP(PLUS,
+        TEMP t100,
+        CONST 8)),
+      CONST -20)),
+    BINOP(TIMES,
+     BINOP(MINUS,
+      BINOP(PLUS,
+       TEMP t107,
+       CONST 7),
+      MEM(
+       BINOP(PLUS,
+        TEMP t100,
+        CONST 12))),
+     CONST 4))),
+  CONST 1)
+ MOVE(
+  MEM(
+   BINOP(PLUS,
+    MEM(
+     BINOP(PLUS,
+      MEM(
+       BINOP(PLUS,
+        TEMP t100,
+        CONST 8)),
+      CONST -12)),
+    BINOP(TIMES,
+     MEM(
+      BINOP(PLUS,
+       TEMP t100,
+       CONST 12)),
+     CONST 4))),
+  TEMP t107)
+ EXP(
+  CALL(
+   NAME try,
+    MEM(
+     BINOP(PLUS,
+      TEMP t100,
+      CONST 8)),
+    BINOP(PLUS,
+     MEM(
+      BINOP(PLUS,
+       TEMP t100,
+       CONST 12)),
+     CONST 1)))
+ MOVE(
+  MEM(
+   BINOP(PLUS,
+    MEM(
+     BINOP(PLUS,
+      MEM(
+       BINOP(PLUS,
+        TEMP t100,
+        CONST 8)),
+      CONST -8)),
+    BINOP(TIMES,
+     TEMP t107,
+     CONST 4))),
+  CONST 0)
+ MOVE(
+  MEM(
+   BINOP(PLUS,
+    MEM(
+     BINOP(PLUS,
+      MEM(
+       BINOP(PLUS,
+        TEMP t100,
+        CONST 8)),
+      CONST -16)),
+    BINOP(TIMES,
+     BINOP(PLUS,
+      TEMP t107,
+      MEM(
+       BINOP(PLUS,
+        TEMP t100,
+        CONST 12))),
+     CONST 4))),
+  CONST 0)
+ MOVE(
+  MEM(
+   BINOP(PLUS,
+    MEM(
+     BINOP(PLUS,
+      MEM(
+       BINOP(PLUS,
+        TEMP t100,
+        CONST 8)),
+      CONST -20)),
+    BINOP(TIMES,
+     BINOP(MINUS,
+      BINOP(PLUS,
+       TEMP t107,
+       CONST 7),
+      MEM(
+       BINOP(PLUS,
+        TEMP t100,
+        CONST 12))),
+     CONST 4))),
+  CONST 0)
+ LABEL ifFalseL3
+ CJUMP(EQ,
+  TEMP t107,
+  TEMP t113,
+  L13,L22)
+ LABEL L22
+ MOVE(
+  TEMP t107,
+  BINOP(PLUS,
+   TEMP t107,
+   CONST 1))
+ JUMP(
+  NAME L21)
+ LABEL L13
+ MOVE(
+  TEMP t114,
+  CONST 0)
+ JUMP(
+  NAME L23)
+ LABEL L23
+ MOVE(
+  TEMP t106,
+  TEMP t114)
 -----=======before RA========------
 [flowgraph][FG_AssemFlowGraph] begin
 [flowgraph][FG_AssemFlowGraph] complete
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[regalloc][generate_map] begin
+[regalloc][generate_map] 106=%eax
+[regalloc][generate_map] 126=%ebx
+[regalloc][generate_map] 139=%ecx
+[regalloc][generate_map] 138=%edx
+[regalloc][generate_map] 127=%esi
+[regalloc][generate_map] 128=%edi
+[regalloc][generate_map] 337=%eax
+[regalloc][generate_map] 339=%eax
+[regalloc][generate_map] 341=%eax
+[regalloc][generate_map] 188=%eax
+[regalloc][generate_map] 187=%eax
+[regalloc][generate_map] 189=%eax
+[regalloc][generate_map] 190=%ebx
+[regalloc][generate_map] 193=%ecx
+[regalloc][generate_map] 192=%ecx
+[regalloc][generate_map] 195=%ebx
+[regalloc][generate_map] 107=%esi
+[regalloc][generate_map] 198=%ebx
+[regalloc][generate_map] 197=%ebx
+[regalloc][generate_map] 200=%ecx
+[regalloc][generate_map] 196=%ebx
+[regalloc][generate_map] 343=%ebx
+[regalloc][generate_map] 344=%ebx
+[regalloc][generate_map] 206=%ebx
+[regalloc][generate_map] 205=%ecx
+[regalloc][generate_map] 210=%edx
+[regalloc][generate_map] 208=%ebx
+[regalloc][generate_map] 204=%ecx
+[regalloc][generate_map] 203=%ebx
+[regalloc][generate_map] 211=%ecx
+[regalloc][generate_map] 212=%ebx
+[regalloc][generate_map] 108=%ebx
+[regalloc][generate_map] 214=%ecx
+[regalloc][generate_map] 215=%ecx
+[regalloc][generate_map] 110=%ecx
+[regalloc][generate_map] 217=%ebx
+[regalloc][generate_map] 345=%ebx
+[regalloc][generate_map] 222=%ecx
+[regalloc][generate_map] 220=%ebx
+[regalloc][generate_map] 224=%eax
+[regalloc][generate_map] 223=%ebx
+[regalloc][generate_map] 114=%ebx
+[regalloc][generate_map] 226=%ebx
+[regalloc][generate_map] 109=%ebx
+[regalloc][generate_map] 230=%ecx
+[regalloc][generate_map] 229=%edi
+[regalloc][generate_map] 235=%edx
+[regalloc][generate_map] 233=%ecx
+[regalloc][generate_map] 237=%edx
+[regalloc][generate_map] 232=%ecx
+[regalloc][generate_map] 228=%edi
+[regalloc][generate_map] 227=%ecx
+[regalloc][generate_map] 238=%edx
+[regalloc][generate_map] 239=%ebx
+[regalloc][generate_map] 240=%ecx
+[regalloc][generate_map] 111=%ecx
+[regalloc][generate_map] 244=%ebx
+[regalloc][generate_map] 243=%ebx
+[regalloc][generate_map] 250=%edi
+[regalloc][generate_map] 248=%edx
+[regalloc][generate_map] 251=%edi
+[regalloc][generate_map] 247=%edx
+[regalloc][generate_map] 253=%edi
+[regalloc][generate_map] 246=%edx
+[regalloc][generate_map] 242=%ebx
+[regalloc][generate_map] 241=%ebx
+[regalloc][generate_map] 254=%edx
+[regalloc][generate_map] 255=%ecx
+[regalloc][generate_map] 256=%ecx
+[regalloc][generate_map] 259=%eax
+[regalloc][generate_map] 258=%ebx
+[regalloc][generate_map] 263=%edx
+[regalloc][generate_map] 261=%eax
+[regalloc][generate_map] 257=%ebx
+[regalloc][generate_map] 264=%ecx
+[regalloc][generate_map] 267=%eax
+[regalloc][generate_map] 266=%ebx
+[regalloc][generate_map] 272=%edx
+[regalloc][generate_map] 270=%eax
+[regalloc][generate_map] 274=%edx
+[regalloc][generate_map] 269=%eax
+[regalloc][generate_map] 265=%ebx
+[regalloc][generate_map] 275=%ebx
+[regalloc][generate_map] 278=%eax
+[regalloc][generate_map] 277=%ecx
+[regalloc][generate_map] 284=%edx
+[regalloc][generate_map] 282=%eax
+[regalloc][generate_map] 285=%edx
+[regalloc][generate_map] 281=%eax
+[regalloc][generate_map] 287=%edx
+[regalloc][generate_map] 280=%eax
+[regalloc][generate_map] 276=%ecx
+[regalloc][generate_map] 291=%eax
+[regalloc][generate_map] 290=%ebx
+[regalloc][generate_map] 294=%eax
+[regalloc][generate_map] 296=%ecx
+[regalloc][generate_map] 293=%eax
+[regalloc][generate_map] 289=%ebx
+[regalloc][generate_map] 299=%eax
+[regalloc][generate_map] 301=%ebx
+[regalloc][generate_map] 298=%eax
+[regalloc][generate_map] 302=%eax
+[regalloc][generate_map] 297=%eax
+[regalloc][generate_map] 304=%edx
+[regalloc][generate_map] 307=%ebx
+[regalloc][generate_map] 306=%ecx
+[regalloc][generate_map] 311=%edi
+[regalloc][generate_map] 309=%ebx
+[regalloc][generate_map] 305=%ecx
+[regalloc][generate_map] 312=%edx
+[regalloc][generate_map] 315=%ebx
+[regalloc][generate_map] 314=%edi
+[regalloc][generate_map] 320=%ecx
+[regalloc][generate_map] 318=%ebx
+[regalloc][generate_map] 322=%ecx
+[regalloc][generate_map] 317=%ebx
+[regalloc][generate_map] 313=%edi
+[regalloc][generate_map] 323=%edx
+[regalloc][generate_map] 326=%ebx
+[regalloc][generate_map] 325=%ecx
+[regalloc][generate_map] 332=%ebx
+[regalloc][generate_map] 330=%edi
+[regalloc][generate_map] 333=%ebx
+[regalloc][generate_map] 329=%edi
+[regalloc][generate_map] 335=%ebx
+[regalloc][generate_map] 328=%edi
+[regalloc][generate_map] 324=%ebx
+[regalloc][generate_map] 336=%ebx
+[regalloc][generate_map] 342=%edi
+[regalloc][generate_map] 340=%esi
+[regalloc][generate_map] 338=%ebx
 [X86frame][F_procEntryExit3] begin
 [X86frame][F_procEntryExit3] complete
 [main][doProc]==== write file ====
 [main][doProc]for function try complete
 [main][doStr]begin
+[main][doStr]length=14
+[main][doStr]complete
+[main][doProc]for function printboard:
+-------==== before linerize =====-----
+-------====IR tree=====-----
+ EXP(
+  CALL(
+   NAME print,
+    NAME L0))
+ EXP(
+  CALL(
+   NAME flush))
+ MOVE(
+  TEMP t101,
+  CONST 0)
+ MOVE(
+  TEMP t105,
+  BINOP(MINUS,
+   MEM(
+    BINOP(PLUS,
+     MEM(
+      BINOP(PLUS,
+       TEMP t100,
+       CONST 8)),
+     CONST -4)),
+   CONST 1))
+ CJUMP(GT,
+  TEMP t101,
+  TEMP t105,
+  L1,L9)
+ LABEL L9
+ MOVE(
+  TEMP t102,
+  CONST 0)
+ MOVE(
+  TEMP t104,
+  BINOP(MINUS,
+   MEM(
+    BINOP(PLUS,
+     MEM(
+      BINOP(PLUS,
+       TEMP t100,
+       CONST 8)),
+     CONST -4)),
+   CONST 1))
+ CJUMP(GT,
+  TEMP t102,
+  TEMP t104,
+  L2,L6)
+ LABEL L6
+ CJUMP(EQ,
+  MEM(
+   BINOP(PLUS,
+    MEM(
+     BINOP(PLUS,
+      MEM(
+       BINOP(PLUS,
+        TEMP t100,
+        CONST 8)),
+      CONST -12)),
+    BINOP(TIMES,
+     TEMP t101,
+     CONST 4))),
+  TEMP t102,
+  ifTrueL0,ifFalseL0)
+ LABEL ifTrueL0
+ MOVE(
+  TEMP t103,
+  NAME L3)
+ JUMP(
+  NAME L5)
+ LABEL ifFalseL0
+ MOVE(
+  TEMP t103,
+  NAME L4)
+ JUMP(
+  NAME L5)
+ LABEL L5
+ EXP(
+  CALL(
+   NAME print,
+    TEMP t103))
+ CJUMP(EQ,
+  TEMP t102,
+  TEMP t104,
+  L2,L7)
+ LABEL L7
+ MOVE(
+  TEMP t102,
+  BINOP(PLUS,
+   TEMP t102,
+   CONST 1))
+ JUMP(
+  NAME L6)
+ LABEL L2
+ EXP(
+  CALL(
+   NAME print,
+    NAME L8))
+ CJUMP(EQ,
+  TEMP t101,
+  TEMP t105,
+  L1,L10)
+ LABEL L10
+ MOVE(
+  TEMP t101,
+  BINOP(PLUS,
+   TEMP t101,
+   CONST 1))
+ JUMP(
+  NAME L9)
+ LABEL L1
+ MOVE(
+  TEMP t106,
+  CALL(
+   NAME print,
+    NAME L11))
+-----=======before RA========------
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[regalloc][generate_map] begin
+[regalloc][generate_map] 106=%eax
+[regalloc][generate_map] 126=%ebx
+[regalloc][generate_map] 139=%ecx
+[regalloc][generate_map] 138=%edx
+[regalloc][generate_map] 127=%esi
+[regalloc][generate_map] 128=%edi
+[regalloc][generate_map] 395=%ebx
+[regalloc][generate_map] 397=%esi
+[regalloc][generate_map] 399=%edi
+[regalloc][generate_map] 350=%eax
+[regalloc][generate_map] 349=%eax
+[regalloc][generate_map] 351=%eax
+[regalloc][generate_map] 352=%eax
+[regalloc][generate_map] 401=%eax
+[regalloc][generate_map] 355=%eax
+[regalloc][generate_map] 354=%esi
+[regalloc][generate_map] 357=%eax
+[regalloc][generate_map] 353=%esi
+[regalloc][generate_map] 105=%esi
+[regalloc][generate_map] 402=%eax
+[regalloc][generate_map] 360=%ebx
+[regalloc][generate_map] 102=%ebx
+[regalloc][generate_map] 363=%eax
+[regalloc][generate_map] 362=%edi
+[regalloc][generate_map] 365=%eax
+[regalloc][generate_map] 361=%edi
+[regalloc][generate_map] 104=%edi
+[regalloc][generate_map] 371=%eax
+[regalloc][generate_map] 370=%ecx
+[regalloc][generate_map] 375=%eax
+[regalloc][generate_map] 403=%edx
+[regalloc][generate_map] 373=%edx
+[regalloc][generate_map] 369=%ecx
+[regalloc][generate_map] 368=%eax
+[regalloc][generate_map] 377=%eax
+[regalloc][generate_map] 103=%eax
+[regalloc][generate_map] 378=%eax
+[regalloc][generate_map] 384=%eax
+[regalloc][generate_map] 382=%ebx
+[regalloc][generate_map] 385=%eax
+[regalloc][generate_map] 387=%eax
+[regalloc][generate_map] 386=%eax
+[regalloc][generate_map] 404=%eax
+[regalloc][generate_map] 392=%ebx
+[regalloc][generate_map] 405=%eax
+[regalloc][generate_map] 390=%eax
+[regalloc][generate_map] 406=%eax
+[regalloc][generate_map] 394=%eax
+[regalloc][generate_map] 393=%eax
+[regalloc][generate_map] 400=%edi
+[regalloc][generate_map] 398=%esi
+[regalloc][generate_map] 396=%ebx
+[X86frame][F_procEntryExit3] begin
+[X86frame][F_procEntryExit3] complete
+[main][doProc]==== write file ====
+[main][doProc]for function printboard complete
+[main][doStr]begin
 [main][doStr]length=1
 [main][doStr]complete
-[main][doProc]for function bsearch:
--------==== before linerize =====-----
--------====IR tree=====-----
------=======before RA========------
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[X86frame][F_procEntryExit3] begin
-[X86frame][F_procEntryExit3] complete
-[main][doProc]==== write file ====
-[main][doProc]for function bsearch complete
-[main][doProc]for function init:
--------==== before linerize =====-----
--------====IR tree=====-----
------=======before RA========------
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[X86frame][F_procEntryExit3] begin
-[X86frame][F_procEntryExit3] complete
-[main][doProc]==== write file ====
-[main][doProc]for function init complete
-[main][doProc]for function nop:
--------==== before linerize =====-----
--------====IR tree=====-----
------=======before RA========------
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[X86frame][F_procEntryExit3] begin
-[X86frame][F_procEntryExit3] complete
-[main][doProc]==== write file ====
-[main][doProc]for function nop complete
 [main][doStr]begin
-[main][doStr]length=0
+[main][doStr]length=1
+[main][doStr]complete
+[main][doStr]begin
+[main][doStr]length=2
+[main][doStr]complete
+[main][doStr]begin
+[main][doStr]length=2
+[main][doStr]complete
+[main][doStr]begin
+[main][doStr]length=14
 [main][doStr]complete
 =========================== link ==========================
-pass bsearch.tig
-=========================== compile ==========================
-	<>														[main][doProc]for function tigermain:
--------==== before linerize =====-----
--------====IR tree=====-----
------=======before RA========------
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[X86frame][F_procEntryExit3] begin
-[X86frame][F_procEntryExit3] complete
-[main][doProc]==== write file ====
-[main][doProc]for function tigermain complete
-[main][doProc]for function try:
--------==== before linerize =====-----
--------====IR tree=====-----
------=======before RA========------
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[X86frame][F_procEntryExit3] begin
-[X86frame][F_procEntryExit3] complete
-[main][doProc]==== write file ====
-[main][doProc]for function try complete
-[main][doStr]begin
-[main][doStr]length=1
-[main][doStr]complete
-[main][doStr]begin
-[main][doStr]length=4
-[main][doStr]complete
-[main][doStr]begin
-[main][doStr]length=1
-[main][doStr]complete
-[main][doStr]begin
-[main][doStr]length=4
-[main][doStr]complete
-[main][doStr]begin
-[main][doStr]length=1
-[main][doStr]complete
-[main][doStr]begin
-[main][doStr]length=4
-[main][doStr]complete
-[main][doStr]begin
-[main][doStr]length=1
-[main][doStr]complete
-[main][doStr]begin
-[main][doStr]length=4
-[main][doStr]complete
-[main][doProc]for function dec2bin:
--------==== before linerize =====-----
--------====IR tree=====-----
------=======before RA========------
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[X86frame][F_procEntryExit3] begin
-[X86frame][F_procEntryExit3] complete
-[main][doProc]==== write file ====
-[main][doProc]for function dec2bin complete
-=========================== link ==========================
-pass dec2bin.tig
-=========================== compile ==========================
-[main][doProc]for function tigermain:
--------==== before linerize =====-----
--------====IR tree=====-----
------=======before RA========------
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[X86frame][F_procEntryExit3] begin
-[X86frame][F_procEntryExit3] complete
-[main][doProc]==== write file ====
-[main][doProc]for function tigermain complete
-[main][doProc]for function printlist:
--------==== before linerize =====-----
--------====IR tree=====-----
------=======before RA========------
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[X86frame][F_procEntryExit3] begin
-[X86frame][F_procEntryExit3] complete
-[main][doProc]==== write file ====
-[main][doProc]for function printlist complete
-[main][doStr]begin
-[main][doStr]length=1
-[main][doStr]complete
-[main][doStr]begin
-[main][doStr]length=1
-[main][doStr]complete
-[main][doProc]for function printint:
--------==== before linerize =====-----
--------====IR tree=====-----
------=======before RA========------
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[X86frame][F_procEntryExit3] begin
-[X86frame][F_procEntryExit3] complete
-[main][doProc]==== write file ====
-[main][doProc]for function printint complete
-[main][doStr]begin
-[main][doStr]length=1
-[main][doStr]complete
-[main][doStr]begin
-[main][doStr]length=1
-[main][doStr]complete
-[main][doProc]for function f:
--------==== before linerize =====-----
--------====IR tree=====-----
------=======before RA========------
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[X86frame][F_procEntryExit3] begin
-[X86frame][F_procEntryExit3] complete
-[main][doProc]==== write file ====
-[main][doProc]for function f complete
-[main][doStr]begin
-[main][doStr]length=1
-[main][doStr]complete
-[main][doProc]for function merge:
--------==== before linerize =====-----
--------====IR tree=====-----
------=======before RA========------
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[X86frame][F_procEntryExit3] begin
-[X86frame][F_procEntryExit3] complete
-[main][doProc]==== write file ====
-[main][doProc]for function merge complete
-[main][doProc]for function readlist:
--------==== before linerize =====-----
--------====IR tree=====-----
------=======before RA========------
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[X86frame][F_procEntryExit3] begin
-[X86frame][F_procEntryExit3] complete
-[main][doProc]==== write file ====
-[main][doProc]for function readlist complete
-[main][doProc]for function readint:
--------==== before linerize =====-----
--------====IR tree=====-----
------=======before RA========------
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[X86frame][F_procEntryExit3] begin
-[X86frame][F_procEntryExit3] complete
-[main][doProc]==== write file ====
-[main][doProc]for function readint complete
-[main][doStr]begin
-[main][doStr]length=1
-[main][doStr]complete
-[main][doProc]for function skipto:
--------==== before linerize =====-----
--------====IR tree=====-----
------=======before RA========------
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[X86frame][F_procEntryExit3] begin
-[X86frame][F_procEntryExit3] complete
-[main][doProc]==== write file ====
-[main][doProc]for function skipto complete
-[main][doStr]begin
-[main][doStr]length=1
-[main][doStr]complete
-[main][doStr]begin
-[main][doStr]length=1
-[main][doStr]complete
-[main][doProc]for function isdigit:
--------==== before linerize =====-----
--------====IR tree=====-----
------=======before RA========------
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[X86frame][F_procEntryExit3] begin
-[X86frame][F_procEntryExit3] complete
-[main][doProc]==== write file ====
-[main][doProc]for function isdigit complete
-[main][doStr]begin
-[main][doStr]length=1
-[main][doStr]complete
-[main][doStr]begin
-[main][doStr]length=1
-[main][doStr]complete
-=========================== link ==========================
-=========================== run ==========================
-test1.in
-pass Merge
-=========================== run ==========================
-test2.in
-pass Merge
-=========================== run ==========================
-test3.in
-pass Merge
-=========================== run ==========================
-test4.in
-pass Merge
-=========================== compile ==========================
-[main][doProc]for function tigermain:
--------==== before linerize =====-----
--------====IR tree=====-----
------=======before RA========------
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[X86frame][F_procEntryExit3] begin
-[X86frame][F_procEntryExit3] complete
-[main][doProc]==== write file ====
-[main][doProc]for function tigermain complete
-[main][doProc]for function try:
--------==== before linerize =====-----
--------====IR tree=====-----
------=======before RA========------
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[X86frame][F_procEntryExit3] begin
-[X86frame][F_procEntryExit3] complete
-[main][doProc]==== write file ====
-[main][doProc]for function try complete
-[main][doStr]begin
-[main][doStr]length=1
-[main][doStr]complete
-[main][doStr]begin
-[main][doStr]length=1
-[main][doStr]complete
-[main][doStr]begin
-[main][doStr]length=1
-[main][doStr]complete
-[main][doStr]begin
-[main][doStr]length=1
-[main][doStr]complete
-[main][doStr]begin
-[main][doStr]length=1
-[main][doStr]complete
-[main][doStr]begin
-[main][doStr]length=1
-[main][doStr]complete
-[main][doStr]begin
-[main][doStr]length=1
-[main][doStr]complete
-[main][doStr]begin
-[main][doStr]length=1
-[main][doStr]complete
-[main][doStr]begin
-[main][doStr]length=1
-[main][doStr]complete
-[main][doStr]begin
-[main][doStr]length=1
-[main][doStr]complete
-[main][doStr]begin
-[main][doStr]length=1
-[main][doStr]complete
-[main][doProc]for function check:
--------==== before linerize =====-----
--------====IR tree=====-----
------=======before RA========------
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[X86frame][F_procEntryExit3] begin
-[X86frame][F_procEntryExit3] complete
-[main][doProc]==== write file ====
-[main][doProc]for function check complete
-=========================== link ==========================
-pass prime.tig
-=========================== compile ==========================
-[main][doProc]for function tigermain:
--------==== before linerize =====-----
--------====IR tree=====-----
------=======before RA========------
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[X86frame][F_procEntryExit3] begin
-[X86frame][F_procEntryExit3] complete
-[main][doProc]==== write file ====
-[main][doProc]for function tigermain complete
-[main][doProc]for function dosort:
--------==== before linerize =====-----
--------====IR tree=====-----
------=======before RA========------
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[X86frame][F_procEntryExit3] begin
-[X86frame][F_procEntryExit3] complete
-[main][doProc]==== write file ====
-[main][doProc]for function dosort complete
-[main][doStr]begin
-[main][doStr]length=1
-[main][doStr]complete
-[main][doStr]begin
-[main][doStr]length=1
-[main][doStr]complete
-[main][doProc]for function quicksort:
--------==== before linerize =====-----
--------====IR tree=====-----
------=======before RA========------
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[X86frame][F_procEntryExit3] begin
-[X86frame][F_procEntryExit3] complete
-[main][doProc]==== write file ====
-[main][doProc]for function quicksort complete
-[main][doProc]for function init:
--------==== before linerize =====-----
--------====IR tree=====-----
------=======before RA========------
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[X86frame][F_procEntryExit3] begin
-[X86frame][F_procEntryExit3] complete
-[main][doProc]==== write file ====
-[main][doProc]for function init complete
-[main][doProc]for function nop:
--------==== before linerize =====-----
--------====IR tree=====-----
------=======before RA========------
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[X86frame][F_procEntryExit3] begin
-[X86frame][F_procEntryExit3] complete
-[main][doProc]==== write file ====
-[main][doProc]for function nop complete
-[main][doStr]begin
-[main][doStr]length=0
-[main][doStr]complete
-=========================== link ==========================
-pass qsort.tig
-=========================== compile ==========================
-[main][doProc]for function tigermain:
--------==== before linerize =====-----
--------====IR tree=====-----
------=======before RA========------
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[X86frame][F_procEntryExit3] begin
-[X86frame][F_procEntryExit3] complete
-[main][doProc]==== write file ====
-[main][doProc]for function tigermain complete
-[main][doProc]for function printb:
--------==== before linerize =====-----
--------====IR tree=====-----
------=======before RA========------
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[X86frame][F_procEntryExit3] begin
-[X86frame][F_procEntryExit3] complete
-[main][doProc]==== write file ====
-[main][doProc]for function printb complete
-[main][doStr]begin
-[main][doStr]length=1
-[main][doStr]complete
-[main][doStr]begin
-[main][doStr]length=1
-[main][doStr]complete
-[main][doStr]begin
-[main][doStr]length=1
-[main][doStr]complete
-[main][doStr]begin
-[main][doStr]length=1
-[main][doStr]complete
-=========================== link ==========================
-pass tbi.tig
-=========================== compile ==========================
-[main][doProc]for function tigermain:
--------==== before linerize =====-----
--------====IR tree=====-----
------=======before RA========------
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[X86frame][F_procEntryExit3] begin
-[X86frame][F_procEntryExit3] complete
-[main][doProc]==== write file ====
-[main][doProc]for function tigermain complete
-[main][doProc]for function nfactor:
--------==== before linerize =====-----
--------====IR tree=====-----
------=======before RA========------
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[X86frame][F_procEntryExit3] begin
-[X86frame][F_procEntryExit3] complete
-[main][doProc]==== write file ====
-[main][doProc]for function nfactor complete
-=========================== link ==========================
-pass tfact.tig
-=========================== compile ==========================
-[main][doProc]for function tigermain:
--------==== before linerize =====-----
--------====IR tree=====-----
------=======before RA========------
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[X86frame][F_procEntryExit3] begin
-[X86frame][F_procEntryExit3] complete
-[main][doProc]==== write file ====
-[main][doProc]for function tigermain complete
-=========================== link ==========================
-pass tfo.tig
-=========================== compile ==========================
-[main][doProc]for function tigermain:
--------==== before linerize =====-----
--------====IR tree=====-----
------=======before RA========------
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[X86frame][F_procEntryExit3] begin
-[X86frame][F_procEntryExit3] complete
-[main][doProc]==== write file ====
-[main][doProc]for function tigermain complete
-[main][doStr]begin
-[main][doStr]length=1
-[main][doStr]complete
-[main][doProc]for function g:
--------==== before linerize =====-----
--------====IR tree=====-----
------=======before RA========------
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[X86frame][F_procEntryExit3] begin
-[X86frame][F_procEntryExit3] complete
-[main][doProc]==== write file ====
-[main][doProc]for function g complete
-[main][doStr]begin
-[main][doStr]length=20
-[main][doStr]complete
-=========================== link ==========================
-pass tifn.tig
-=========================== compile ==========================
-[main][doProc]for function tigermain:
--------==== before linerize =====-----
--------====IR tree=====-----
------=======before RA========------
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[X86frame][F_procEntryExit3] begin
-[X86frame][F_procEntryExit3] complete
-[main][doProc]==== write file ====
-[main][doProc]for function tigermain complete
-[main][doProc]for function g:
--------==== before linerize =====-----
--------====IR tree=====-----
------=======before RA========------
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[X86frame][F_procEntryExit3] begin
-[X86frame][F_procEntryExit3] complete
-[main][doProc]==== write file ====
-[main][doProc]for function g complete
-=========================== link ==========================
-pass tif.tig
-=========================== compile ==========================
-[main][doProc]for function tigermain:
--------==== before linerize =====-----
--------====IR tree=====-----
------=======before RA========------
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[X86frame][F_procEntryExit3] begin
-[X86frame][F_procEntryExit3] complete
-[main][doProc]==== write file ====
-[main][doProc]for function tigermain complete
-=========================== link ==========================
-pass trec.tig
-=========================== compile ==========================
-[main][doProc]for function tigermain:
--------==== before linerize =====-----
--------====IR tree=====-----
------=======before RA========------
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[flowgraph][FG_AssemFlowGraph] begin
-[flowgraph][FG_AssemFlowGraph] complete
-[X86frame][F_procEntryExit3] begin
-[X86frame][F_procEntryExit3] complete
-[main][doProc]==== write file ====
-[main][doProc]for function tigermain complete
-=========================== link ==========================
-pass twhi.tig
-[1;32mYour score: 85[0m
+[runtime][initArray]size=8,init=0
+[runtime][initArray]size=8,init=0
+[runtime][initArray]size=15,init=0
+[runtime][initArray]size=15,init=0
+[runtime][print]s->length=14
+[queens][try]
+[1;34m[*_*]: Output mismatches. [queens.tig][0m
+[1;32mYour score: 0[0m

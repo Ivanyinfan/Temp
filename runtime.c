@@ -5,7 +5,7 @@
 
 
 int *initArray(int size, int init)
-{fprintf(stdout,"[runtime][initArray]size=%d,init=%d\n",size,init);fflush(stdout);
+{//fprintf(stdout,"[runtime][initArray]size=%d,init=%d\n",size,init);fflush(stdout);
  int i;
  int *a = (int *)malloc(size*sizeof(int));
  for(i=0;i<size;i++) a[i]=init;
@@ -24,8 +24,8 @@ struct string {int length; unsigned char chars[1];};
 
 int stringEqual(struct string *s, struct string *t)
 {
- //fprintf(stdout,"[runtime][stringEqual]s->length=%d,t->length=%d\n",s->length,t->length);fflush(stdout);
- //fprintf(stdout,"[runtime][stringEqual]s->chars[0]=%d,t->chars[0]=%d\n",s->chars[0],t->chars[0]);fflush(stdout);
+ ////fprintf(stdout,"[runtime][stringEqual]s->length=%d,t->length=%d\n",s->length,t->length);fflush(stdout);
+ ////fprintf(stdout,"[runtime][stringEqual]s->chars[0]=%d,t->chars[0]=%d\n",s->chars[0],t->chars[0]);fflush(stdout);
  int i;
  if (s==t) return 1;
  if (s->length!=t->length) return 0;
@@ -34,7 +34,7 @@ int stringEqual(struct string *s, struct string *t)
 }
 
 void print(struct string *s)
-{fprintf(stdout,"[runtime][print]s->length=%d\n",s->length);fflush(stdout);
+{//fprintf(stdout,"[runtime][print]s->length=%d\n",s->length);fflush(stdout);
  int i; unsigned char *p=s->chars;
  for(i=0;i<s->length;i++,p++) putchar(*p);
 }
@@ -116,7 +116,7 @@ int not(int i)
 
 struct string *__wrap_getchar()
 {int i=getc(stdin);
- //fprintf(stdout,"[runtime][getchar]i=%d\n",i);fflush(stdout);
+ ////fprintf(stdout,"[runtime][getchar]i=%d\n",i);fflush(stdout);
  if(i==-1)exit(0);
  if (i==EOF) return &empty;
  else return consts+i;

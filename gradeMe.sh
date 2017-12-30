@@ -69,8 +69,7 @@ fi
 				score=$((score+result+count/2))
 				#rm -f test.out $TESTCASEDIR/${tfileName}.s
 			else	
-				./test.out 
-				#> _tmp.txt
+				./test.out > _tmp.txt
 				diff $DIFFOPTION _tmp.txt $REFOUTDIR/${tfileName%.*}.out >& _ref.txt
 				if [ -s _ref.txt ]; then
 					echo -e "${BLUE_COLOR}[*_*]$ite: Output mismatches. [$tfileName]${RES}"
