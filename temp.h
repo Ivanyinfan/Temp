@@ -20,6 +20,11 @@ typedef S_symbol Temp_label;
 Temp_label Temp_newlabel(void);
 Temp_label Temp_namedlabel(string name);
 string Temp_labelstring(Temp_label s);
+Temp_label Temp_IfTrueLabel(void);
+Temp_label Temp_IfFalseLabel(void);
+Temp_label Temp_WhileTestLabel(void);
+Temp_label Temp_WhileLoopLabel(void);
+Temp_label Temp_WhileDoneLabel(void);
 
 typedef struct Temp_labelList_ *Temp_labelList;
 struct Temp_labelList_ { Temp_label head; Temp_labelList tail;};

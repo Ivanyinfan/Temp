@@ -20,23 +20,26 @@ DIFFOPTION="-w -B"
 score=0
 
 #pwd
-make clean >& /dev/null
-make >& /dev/null
+echo "=========================== make =========================="
+#make clean >& /dev/null
+make
 #echo $?
 if [[ $? != 0 ]]; then
 	echo -e "${RED_COLOR}[-_-]$ite: Compile Error${RES}"		
-	make clean >& /dev/null
+	#make clean >& /dev/null
 	exit 123
 fi	
 	for tcase in `ls $TESTCASEDIR/`
 	do		
 		if [ ${tcase##*.} = "tig" ]; then
 			tfileName=${tcase##*/}
-			./$BIN $TESTCASEDIR/$tfileName &>/dev/null
-			gcc -Wl,--wrap,getchar -m32 $TESTCASEDIR/${tfileName}.s runtime.c -o test.out &>/dev/null
+			echo "=========================== compile =========================="
+			./$BIN $TESTCASEDIR/$tfileName
+			echo "=========================== link =========================="
+			gcc -Wl,--wrap,getchar -m32 $TESTCASEDIR/${tfileName}.s runtime.c -o test.out 
 			if [ ! -s test.out ]; then
 				echo -e "${BLUE_COLOR}[*_*]$ite: Link error. [$tfileName]${RES}"
- 				rm $TESTCASEDIR/${tfileName}.s 
+ 				#rm $TESTCASEDIR/${tfileName}.s 
 
 				continue
 #exit 345
@@ -47,32 +50,36 @@ fi
 				count=1
 				for mergecase in `ls $MERGECASEDIR` 
 				do
-					./test.out < $MERGECASEDIR/$mergecase >& _tmp.txt
+					echo "=========================== run =========================="
+					echo "$mergecase"
+					./test.out < $MERGECASEDIR/$mergecase > _tmp.txt
+					
 					diff $DIFFOPTION _tmp.txt $MERGEREFDIR/${mergecase%.*}.out >& _ref.txt
 					if [ -s _ref.txt ]; then
 						echo -e "${BLUE_COLOR}[*_*]$ite: Output mismatches. [$tfileName]${RES}"
-						rm -f _tmp.txt _ref.txt $TESTCASEDIR/${tfileName}.s test.out
+						#rm -f _tmp.txt _ref.txt $TESTCASEDIR/${tfileName}.s test.out
 						continue
 #exit 234
 					fi
 					result=$((result+2))
 					count=$((count+1))
 					echo "pass Merge"
-					rm -f _tmp.txt _ref.txt 
+					#rm -f _tmp.txt _ref.txt 
 				done	
 				score=$((score+result+count/2))
-				rm -f test.out $TESTCASEDIR/${tfileName}.s
+				#rm -f test.out $TESTCASEDIR/${tfileName}.s
 			else	
-				./test.out >& _tmp.txt
+				./test.out 
+				#> _tmp.txt
 				diff $DIFFOPTION _tmp.txt $REFOUTDIR/${tfileName%.*}.out >& _ref.txt
 				if [ -s _ref.txt ]; then
 					echo -e "${BLUE_COLOR}[*_*]$ite: Output mismatches. [$tfileName]${RES}"
-					rm -f _tmp.txt _ref.txt $TESTCASEDIR/${tfileName}.s test.out
+					#rm -f _tmp.txt _ref.txt $TESTCASEDIR/${tfileName}.s test.out
 					continue
 #					exit 234
 				fi
 				
-				rm -f _tmp.txt _ref.txt $TESTCASEDIR/${tfileName}.s test.out				
+				#rm -f _tmp.txt _ref.txt $TESTCASEDIR/${tfileName}.s test.out				
 				echo -e "pass ${tfileName}"
 				tname=${tfileName##t}
 				if [ $tname = $tfileName ]; then

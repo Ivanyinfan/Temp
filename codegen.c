@@ -192,7 +192,7 @@ static void munchStm(T_stm s)
         		{
         			char *a = checked_malloc(MAXLINE * sizeof(char));
         			emit(AS_Oper("cmp `s0, `s1\n", NULL, L(right, L(left, NULL)), AS_Targets(NULL)));
-        			sprintf(a, "jge %s\n", Temp_labelstring(s->u.CJUMP.true));
+        			sprintf(a, "jle %s\n", Temp_labelstring(s->u.CJUMP.true));
         			emit(AS_Oper(a, NULL, NULL, AS_Targets(Temp_LabelList(s->u.CJUMP.true, NULL))));
         			break;
         		}
@@ -306,7 +306,7 @@ static Temp_temp munchExp(T_exp e)
         	//fprintf(stdout,"[codegen][munchExp] munch left complete\n");fflush(stdout);
         	Temp_temp right = munchExp(e->u.BINOP.right);
         	//fprintf(stdout,"[codegen][munchExp] munch right complete\n");fflush(stdout);
-        	/* 先把左边给ret，再用ret和右边运算 */
+        	/* 先把左边给ret，再用返回值和右边运算 */
         	switch(e->u.BINOP.op)
         	{
         		case T_plus:

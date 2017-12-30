@@ -25,12 +25,52 @@ string Temp_labelstring(Temp_label s)
 }
 
 static int labels = 0;
+static int ifTrueLabel=0;
+static int ifFalseLabel=0;
+static int whileTestLabel=0;
+static int whileLoopLabel=0;
+static int whileDoneLabel=0;
 
 Temp_label Temp_newlabel(void)
 {char buf[100];
  sprintf(buf,"L%d",labels++);
  //fprintf(stdout,"[temp][Temp_newlabel]%s\n",buf);fflush(stdout);
  return Temp_namedlabel(String(buf));
+}
+
+Temp_label Temp_IfTrueLabel(void)
+{
+	char buf[100];
+ 	sprintf(buf,"ifTrueL%d",ifTrueLabel++);
+ 	return Temp_namedlabel(String(buf));
+}
+
+Temp_label Temp_IfFalseLabel(void)
+{
+	char buf[100];
+ 	sprintf(buf,"ifFalseL%d",ifFalseLabel++);
+ 	return Temp_namedlabel(String(buf));
+}
+
+Temp_label Temp_WhileTestLabel(void)
+{
+	char buf[100];
+ 	sprintf(buf,"wTestL%d",whileTestLabel++);
+ 	return Temp_namedlabel(String(buf));
+}
+
+Temp_label Temp_WhileLoopLabel(void)
+{
+	char buf[100];
+ 	sprintf(buf,"wLoopL%d",whileLoopLabel++);
+ 	return Temp_namedlabel(String(buf));
+}
+
+Temp_label Temp_WhileDoneLabel(void)
+{
+	char buf[100];
+ 	sprintf(buf,"wDoneL%d",whileDoneLabel++);
+ 	return Temp_namedlabel(String(buf));
 }
 
 /* The label will be created only if it is not found. */

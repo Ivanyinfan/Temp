@@ -72,15 +72,17 @@ static void doProc(FILE *out, F_frame frame, T_stm body)
 
  //G_graph fg = FG_AssemFlowGraph(iList);  /* 10.1 */
  struct RA_result ra = RA_regAlloc(frame, iList);  /* 11 */
-
+ //AS_printInstrList (stdout, ra.il,
+                       //Temp_layerMap(F_tempMap,ra.coloring));
  proc =	F_procEntryExit3(frame, ra.il);
-
+ //AS_printInstrList (stdout, proc->body,
+                       //Temp_layerMap(F_tempMap,ra.coloring));
  string procName = S_name(F_name(frame));
  fprintf(out, ".text\n");
- fprintf(out, ".globl %s\n", procName);
+ fprintf(out, ".global %s\n", procName);
  fprintf(out, ".type %s, @function\n", procName);
  fprintf(out, "%s:\n", procName);
- 
+ fprintf(stdout,"[main][doProc]==== write file ====\n");fflush(stdout);
  //fprintf(out, "BEGIN function\n");
  AS_printInstrList (out, proc->body,
                        Temp_layerMap(F_tempMap, ra.coloring));

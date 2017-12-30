@@ -11,14 +11,19 @@ let
     var diag2 := intArray [N+N-1] of 0
 
     function printboard() =
-       (for i := 0 to N-1
-	 do (for j := 0 to N-1 
-	      do print(if col[i]=j then " O" else " .");
-	     print("\n"));
-         print("\n"))
+       (
+       	print("[queens][try]\n");flush();
+       	for i := 0 to N-1
+	 	do (
+	 		for j := 0 to N-1 
+	      	do print(if col[i]=j then " O" else " .");
+	     	print("\n"));
+         	print("\n")
+       )
 
     function try(c:int) = 
 ( /*  for i:= 0 to c do print("."); print("\n"); flush();*/
+	 print("[queens][try]\n");flush();
      if c=N
      then printboard()
      else for r := 0 to N-1

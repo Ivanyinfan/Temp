@@ -1,472 +1,298 @@
-============================== make ================================
-gcc -g -c -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast    -c -o main.o main.c
-gcc -g main.o y.tab.o lex.yy.o errormsg.o absyn.o prabsyn.o symbol.o translate.o semant.o parse.o escape.o frame.o table.o util.o types.o env.o tree.o temp.o printtree.o canon.o codegen.o assem.o graph.o flowgraph.o liveness.o color.o regalloc.o -o tiger-compiler
-============================== compile ================================
-[escape][transExp] A_letExp
-[escape][transDec] A_varDec
-[escape][transDec] N at 0
-[escape][transDec] A_functionDec
-[escape][transExp] A_seqExp
-[escape][transExp] A_forExp
-[escape][transExp] A_opExp
-[escape][transExp] A_varExp
-[escape][transVar] level=1
-[escape][transVar] A_simpleVar N
-[escape]find N escape
-[escape][transExp] A_seqExp
-[escape][transExp] A_forExp
-[escape][transExp] A_opExp
-[escape][transExp] A_varExp
-[escape][transVar] level=1
-[escape][transVar] A_simpleVar N
-[escape]find N escape
-[escape][transExp] A_callExp
-[escape][transExp] A_callExp
-[escape][transExp] A_callExp
-[escape][transExp] A_seqExp
-[escape][transExp] A_callExp
-[X86frame][F_newFrame] formal num=0
-[X86frame][F_newFrame] level=2
-[X86frame][F_newFrame] formal num=0
-[X86frame][F_newFrame] level=2
-[X86frame][InFrame] offset=-4
-[translate][Tr_simpleVar] begin
-[translate][staticLink] a->key=0,b->key=0
-[translate][staticLink] complete
-[X86frame][F_Exp] acc->kind=0
-[X86frame][F_Exp] acc->u.offset=-4
-[translate][Tr_simpleVar] complete
-[translate][Tr_Seq] begin
-[semant][transDec] printb=L0
-[X86frame][F_newFrame] formal num=1
-[X86frame][F_newFrame] level=2
-[X86frame][F_newFrame] level=3
-[X86frame][InFrame] offset=8
-[semant][transExp] A_seqExp
-[semant][transExp] A_seqExp transExp begin
-[semant][transVar] A_simpleVar N
-[translate][Tr_simpleVar] begin
-[translate][staticLink] a->key=2,b->key=0
-[X86frame][F_Exp] acc->kind=0
-[X86frame][F_Exp] acc->u.offset=8
-[translate][staticLink] complete
-[X86frame][F_Exp] acc->kind=0
-[X86frame][F_Exp] acc->u.offset=-4
-[translate][Tr_simpleVar] complete
-[semant][transExp] A_seqExp
-[semant][transExp] A_seqExp transExp begin
-[semant][transVar] A_simpleVar N
-[translate][Tr_simpleVar] begin
-[translate][staticLink] a->key=2,b->key=0
-[X86frame][F_Exp] acc->kind=0
-[X86frame][F_Exp] acc->u.offset=8
-[translate][staticLink] complete
-[X86frame][F_Exp] acc->kind=0
-[X86frame][F_Exp] acc->u.offset=-4
-[translate][Tr_simpleVar] complete
-[semant][transExp] A_ifExp
-[semant][transVar] A_simpleVar i
-[translate][Tr_simpleVar] begin
-[translate][staticLink] a->key=2,b->key=2
-[translate][staticLink] complete
-[X86frame][F_Exp] acc->kind=1
-[translate][Tr_simpleVar] complete
-[semant][transVar] A_simpleVar j
-[translate][Tr_simpleVar] begin
-[translate][staticLink] a->key=2,b->key=2
-[translate][staticLink] complete
-[X86frame][F_Exp] acc->kind=1
-[translate][Tr_simpleVar] complete
-[transExp] A_ifExp trans test complete
-[semant][transExp] A_stringExp
-[semant][transExp] strlen=1
-[translate][Tr_String] begin
-[semant][transExp] A_stringExp
-[semant][transExp] strlen=1
-[translate][Tr_String] begin
-[translate][Tr_If]test->kind=2
-[translate][Tr_simpleVar] begin
-[translate][staticLink] a->key=2,b->key=2
-[translate][staticLink] complete
-[X86frame][F_Exp] acc->kind=1
-[translate][Tr_simpleVar] complete
-[translate][Tr_Seq] begin
-[semant][transExp] A_seqExp transExp complete
-[semant][transExp] A_seqExp transExp begin
-[semant][transExp] A_stringExp
-[semant][transExp] strlen=1
-[translate][Tr_String] begin
-[translate][Tr_Seq] begin
-[semant][transExp] A_seqExp transExp complete
-[translate][Tr_simpleVar] begin
-[translate][staticLink] a->key=2,b->key=2
-[translate][staticLink] complete
-[X86frame][F_Exp] acc->kind=1
-[translate][Tr_simpleVar] complete
-[translate][Tr_Seq] begin
-[semant][transExp] A_seqExp transExp complete
-[semant][transExp] A_seqExp transExp begin
-[semant][transExp] A_stringExp
-[semant][transExp] strlen=1
-[translate][Tr_String] begin
-[translate][Tr_Seq] begin
-[semant][transExp] A_seqExp transExp complete
-[translate][Tr_Seq] begin
-[semant][transExp] A_seqExp
-[semant][transExp] A_seqExp transExp begin
-[translate][staticLink] a->key=0,b->key=0
-[translate][staticLink] complete
-[translate][Tr_Seq] begin
-[semant][transExp] A_seqExp transExp complete
-[translate][Tr_Seq] begin
+=========================== make ==========================
+make: 'tiger-compiler' is up to date.
+=========================== compile ==========================
 [main][doProc]for function tigermain:
 -------==== before linerize =====-----
 -------====IR tree=====-----
-I_MOVE :movl `s0, `d0
-        src=107 
-        dst=107 
-I_MOVE :movl `s0, `d0
-        src=108 
-        dst=108 
-I_MOVE :movl `s0, `d0
-        src=109 
-        dst=109 
-I_LABEL:L15
-I_OPER :movl $8, `d0
-
-        src=113 
-        dst=113 
-        targets=
-I_OPER :movl `s0, -4(`s1)
-
-        src=
-        dst=
-        targets=
-I_OPER :pushl `s0
-
-        src=
-        dst=
-        targets=
-I_OPER :call L0
-
-        src=106 118 117 
-        dst=106 118 117 
-        targets=
-I_MOVE :movl `s0, `d0
-        src=115 
-        dst=115 
-I_MOVE :movl `s0, `d0
-        src=106 
-        dst=106 
-I_OPER :jmp L14
-
-        src=
-        dst=
-        targets=L14 
-I_LABEL:L14
-I_MOVE :movl `s0, `d0
-        src=112 
-        dst=112 
-I_MOVE :movl `s0, `d0
-        src=111 
-        dst=111 
-I_MOVE :movl `s0, `d0
-        src=110 
-        dst=110 
-I_OPER :
-
-        src=
-        dst=
-        targets=
 -----=======before RA========------
-[regalloc][RA_regAllocp] begin
 [flowgraph][FG_AssemFlowGraph] begin
 [flowgraph][FG_AssemFlowGraph] complete
-[regalloc][RA_regAllocp] complete
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[X86frame][F_procEntryExit3] begin
+[X86frame][F_procEntryExit3] complete
+[main][doProc]==== write file ====
 [main][doProc]for function tigermain complete
-[main][doProc]for function L0:
+[main][doProc]for function try:
 -------==== before linerize =====-----
 -------====IR tree=====-----
-I_MOVE :movl `s0, `d0
-        src=119 
-        dst=119 
-I_MOVE :movl `s0, `d0
-        src=120 
-        dst=120 
-I_MOVE :movl `s0, `d0
-        src=121 
-        dst=121 
-I_LABEL:L17
-I_OPER :movl $0, `d0
-
-        src=122 
-        dst=122 
-        targets=
-I_MOVE :movl `s0, `d0
-        src=101 
-        dst=101 
-I_OPER :movl 8(`s0), `d0
-
-        src=125 
-        dst=125 
-        targets=
-I_OPER :movl -4(`s0), `d0
-
-        src=124 
-        dst=124 
-        targets=
-I_OPER :movl $1, `d0
-
-        src=127 
-        dst=127 
-        targets=
-I_MOVE :movl `s0, `d0
-        src=123 
-        dst=123 
-I_OPER :subl `s0, `d0
-
-        src=123 
-        dst=123 
-        targets=
-I_MOVE :movl `s0, `d0
-        src=105 
-        dst=105 
-I_OPER :cmp `s0, `s1
-
-        src=
-        dst=
-        targets=
-I_OPER :jg L1
-
-        src=
-        dst=
-        targets=L1 
-I_LABEL:L11
-I_OPER :movl $0, `d0
-
-        src=130 
-        dst=130 
-        targets=
-I_MOVE :movl `s0, `d0
-        src=102 
-        dst=102 
-I_OPER :movl 8(`s0), `d0
-
-        src=133 
-        dst=133 
-        targets=
-I_OPER :movl -4(`s0), `d0
-
-        src=132 
-        dst=132 
-        targets=
-I_OPER :movl $1, `d0
-
-        src=135 
-        dst=135 
-        targets=
-I_MOVE :movl `s0, `d0
-        src=131 
-        dst=131 
-I_OPER :subl `s0, `d0
-
-        src=131 
-        dst=131 
-        targets=
-I_MOVE :movl `s0, `d0
-        src=104 
-        dst=104 
-I_OPER :cmp `s0, `s1
-
-        src=
-        dst=
-        targets=
-I_OPER :jg L2
-
-        src=
-        dst=
-        targets=L2 
-I_LABEL:L8
-I_OPER :cmp `s0, `s1
-
-        src=
-        dst=
-        targets=
-I_OPER :jg L5
-
-        src=
-        dst=
-        targets=L5 
-I_LABEL:L6
-I_OPER :movl $L4, `d0
-
-        src=140 
-        dst=140 
-        targets=
-I_MOVE :movl `s0, `d0
-        src=103 
-        dst=103 
-I_LABEL:L7
-I_OPER :pushl `s0
-
-        src=
-        dst=
-        targets=
-I_OPER :call print
-
-        src=106 118 117 
-        dst=106 118 117 
-        targets=
-I_MOVE :movl `s0, `d0
-        src=141 
-        dst=141 
-I_OPER :cmp `s0, `s1
-
-        src=
-        dst=
-        targets=
-I_OPER :je L2
-
-        src=
-        dst=
-        targets=L2 
-I_LABEL:L9
-I_OPER :movl $1, `d0
-
-        src=147 
-        dst=147 
-        targets=
-I_MOVE :movl `s0, `d0
-        src=145 
-        dst=145 
-I_OPER :addl `s0, `d0
-
-        src=145 
-        dst=145 
-        targets=
-I_MOVE :movl `s0, `d0
-        src=102 
-        dst=102 
-I_OPER :jmp L8
-
-        src=
-        dst=
-        targets=L8 
-I_LABEL:L5
-I_OPER :movl $L3, `d0
-
-        src=148 
-        dst=148 
-        targets=
-I_MOVE :movl `s0, `d0
-        src=103 
-        dst=103 
-I_OPER :jmp L7
-
-        src=
-        dst=
-        targets=L7 
-I_LABEL:L2
-I_OPER :movl $L10, `d0
-
-        src=150 
-        dst=150 
-        targets=
-I_OPER :pushl `s0
-
-        src=
-        dst=
-        targets=
-I_OPER :call print
-
-        src=106 118 117 
-        dst=106 118 117 
-        targets=
-I_MOVE :movl `s0, `d0
-        src=149 
-        dst=149 
-I_OPER :cmp `s0, `s1
-
-        src=
-        dst=
-        targets=
-I_OPER :je L1
-
-        src=
-        dst=
-        targets=L1 
-I_LABEL:L12
-I_OPER :movl $1, `d0
-
-        src=155 
-        dst=155 
-        targets=
-I_MOVE :movl `s0, `d0
-        src=153 
-        dst=153 
-I_OPER :addl `s0, `d0
-
-        src=153 
-        dst=153 
-        targets=
-I_MOVE :movl `s0, `d0
-        src=101 
-        dst=101 
-I_OPER :jmp L11
-
-        src=
-        dst=
-        targets=L11 
-I_LABEL:L1
-I_OPER :movl $L13, `d0
-
-        src=157 
-        dst=157 
-        targets=
-I_OPER :pushl `s0
-
-        src=
-        dst=
-        targets=
-I_OPER :call print
-
-        src=106 118 117 
-        dst=106 118 117 
-        targets=
-I_MOVE :movl `s0, `d0
-        src=156 
-        dst=156 
-I_MOVE :movl `s0, `d0
-        src=106 
-        dst=106 
-I_OPER :jmp L16
-
-        src=
-        dst=
-        targets=L16 
-I_LABEL:L16
-I_MOVE :movl `s0, `d0
-        src=112 
-        dst=112 
-I_MOVE :movl `s0, `d0
-        src=111 
-        dst=111 
-I_MOVE :movl `s0, `d0
-        src=110 
-        dst=110 
-I_OPER :
-
-        src=
-        dst=
-        targets=
 -----=======before RA========------
-[regalloc][RA_regAllocp] begin
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[X86frame][F_procEntryExit3] begin
+[X86frame][F_procEntryExit3] complete
+[main][doProc]==== write file ====
+[main][doProc]for function try complete
+[main][doStr]begin
+[main][doStr]length=1
+[main][doStr]complete
+[main][doProc]for function bsearch:
+-------==== before linerize =====-----
+-------====IR tree=====-----
+-----=======before RA========------
 [flowgraph][FG_AssemFlowGraph] begin
 [flowgraph][FG_AssemFlowGraph] complete
 [flowgraph][FG_AssemFlowGraph] begin
 [flowgraph][FG_AssemFlowGraph] complete
-[regalloc][RA_regAllocp] complete
-[main][doProc]for function L0 complete
+[X86frame][F_procEntryExit3] begin
+[X86frame][F_procEntryExit3] complete
+[main][doProc]==== write file ====
+[main][doProc]for function bsearch complete
+[main][doProc]for function init:
+-------==== before linerize =====-----
+-------====IR tree=====-----
+-----=======before RA========------
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[X86frame][F_procEntryExit3] begin
+[X86frame][F_procEntryExit3] complete
+[main][doProc]==== write file ====
+[main][doProc]for function init complete
+[main][doProc]for function nop:
+-------==== before linerize =====-----
+-------====IR tree=====-----
+-----=======before RA========------
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[X86frame][F_procEntryExit3] begin
+[X86frame][F_procEntryExit3] complete
+[main][doProc]==== write file ====
+[main][doProc]for function nop complete
+[main][doStr]begin
+[main][doStr]length=0
+[main][doStr]complete
+=========================== link ==========================
+pass bsearch.tig
+=========================== compile ==========================
+	<>														[main][doProc]for function tigermain:
+-------==== before linerize =====-----
+-------====IR tree=====-----
+-----=======before RA========------
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[X86frame][F_procEntryExit3] begin
+[X86frame][F_procEntryExit3] complete
+[main][doProc]==== write file ====
+[main][doProc]for function tigermain complete
+[main][doProc]for function try:
+-------==== before linerize =====-----
+-------====IR tree=====-----
+-----=======before RA========------
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[X86frame][F_procEntryExit3] begin
+[X86frame][F_procEntryExit3] complete
+[main][doProc]==== write file ====
+[main][doProc]for function try complete
+[main][doStr]begin
+[main][doStr]length=1
+[main][doStr]complete
+[main][doStr]begin
+[main][doStr]length=4
+[main][doStr]complete
+[main][doStr]begin
+[main][doStr]length=1
+[main][doStr]complete
+[main][doStr]begin
+[main][doStr]length=4
+[main][doStr]complete
+[main][doStr]begin
+[main][doStr]length=1
+[main][doStr]complete
+[main][doStr]begin
+[main][doStr]length=4
+[main][doStr]complete
+[main][doStr]begin
+[main][doStr]length=1
+[main][doStr]complete
+[main][doStr]begin
+[main][doStr]length=4
+[main][doStr]complete
+[main][doProc]for function dec2bin:
+-------==== before linerize =====-----
+-------====IR tree=====-----
+-----=======before RA========------
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[X86frame][F_procEntryExit3] begin
+[X86frame][F_procEntryExit3] complete
+[main][doProc]==== write file ====
+[main][doProc]for function dec2bin complete
+=========================== link ==========================
+pass dec2bin.tig
+=========================== compile ==========================
+[main][doProc]for function tigermain:
+-------==== before linerize =====-----
+-------====IR tree=====-----
+-----=======before RA========------
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[X86frame][F_procEntryExit3] begin
+[X86frame][F_procEntryExit3] complete
+[main][doProc]==== write file ====
+[main][doProc]for function tigermain complete
+[main][doProc]for function printlist:
+-------==== before linerize =====-----
+-------====IR tree=====-----
+-----=======before RA========------
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[X86frame][F_procEntryExit3] begin
+[X86frame][F_procEntryExit3] complete
+[main][doProc]==== write file ====
+[main][doProc]for function printlist complete
+[main][doStr]begin
+[main][doStr]length=1
+[main][doStr]complete
+[main][doStr]begin
+[main][doStr]length=1
+[main][doStr]complete
+[main][doProc]for function printint:
+-------==== before linerize =====-----
+-------====IR tree=====-----
+-----=======before RA========------
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[X86frame][F_procEntryExit3] begin
+[X86frame][F_procEntryExit3] complete
+[main][doProc]==== write file ====
+[main][doProc]for function printint complete
+[main][doStr]begin
+[main][doStr]length=1
+[main][doStr]complete
+[main][doStr]begin
+[main][doStr]length=1
+[main][doStr]complete
+[main][doProc]for function f:
+-------==== before linerize =====-----
+-------====IR tree=====-----
+-----=======before RA========------
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[X86frame][F_procEntryExit3] begin
+[X86frame][F_procEntryExit3] complete
+[main][doProc]==== write file ====
+[main][doProc]for function f complete
+[main][doStr]begin
+[main][doStr]length=1
+[main][doStr]complete
+[main][doProc]for function merge:
+-------==== before linerize =====-----
+-------====IR tree=====-----
+-----=======before RA========------
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[X86frame][F_procEntryExit3] begin
+[X86frame][F_procEntryExit3] complete
+[main][doProc]==== write file ====
+[main][doProc]for function merge complete
+[main][doProc]for function readlist:
+-------==== before linerize =====-----
+-------====IR tree=====-----
+-----=======before RA========------
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[X86frame][F_procEntryExit3] begin
+[X86frame][F_procEntryExit3] complete
+[main][doProc]==== write file ====
+[main][doProc]for function readlist complete
+[main][doProc]for function readint:
+-------==== before linerize =====-----
+-------====IR tree=====-----
+-----=======before RA========------
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[X86frame][F_procEntryExit3] begin
+[X86frame][F_procEntryExit3] complete
+[main][doProc]==== write file ====
+[main][doProc]for function readint complete
+[main][doStr]begin
+[main][doStr]length=1
+[main][doStr]complete
+[main][doProc]for function skipto:
+-------==== before linerize =====-----
+-------====IR tree=====-----
+-----=======before RA========------
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[X86frame][F_procEntryExit3] begin
+[X86frame][F_procEntryExit3] complete
+[main][doProc]==== write file ====
+[main][doProc]for function skipto complete
+[main][doStr]begin
+[main][doStr]length=1
+[main][doStr]complete
+[main][doStr]begin
+[main][doStr]length=1
+[main][doStr]complete
+[main][doProc]for function isdigit:
+-------==== before linerize =====-----
+-------====IR tree=====-----
+-----=======before RA========------
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[X86frame][F_procEntryExit3] begin
+[X86frame][F_procEntryExit3] complete
+[main][doProc]==== write file ====
+[main][doProc]for function isdigit complete
+[main][doStr]begin
+[main][doStr]length=1
+[main][doStr]complete
+[main][doStr]begin
+[main][doStr]length=1
+[main][doStr]complete
+=========================== link ==========================
+=========================== run ==========================
+test1.in
+pass Merge
+=========================== run ==========================
+test2.in
+pass Merge
+=========================== run ==========================
+test3.in
+pass Merge
+=========================== run ==========================
+test4.in
+pass Merge
+=========================== compile ==========================
+[main][doProc]for function tigermain:
+-------==== before linerize =====-----
+-------====IR tree=====-----
+-----=======before RA========------
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[X86frame][F_procEntryExit3] begin
+[X86frame][F_procEntryExit3] complete
+[main][doProc]==== write file ====
+[main][doProc]for function tigermain complete
+[main][doProc]for function try:
+-------==== before linerize =====-----
+-------====IR tree=====-----
+-----=======before RA========------
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[X86frame][F_procEntryExit3] begin
+[X86frame][F_procEntryExit3] complete
+[main][doProc]==== write file ====
+[main][doProc]for function try complete
 [main][doStr]begin
 [main][doStr]length=1
 [main][doStr]complete
@@ -479,6 +305,268 @@ I_OPER :
 [main][doStr]begin
 [main][doStr]length=1
 [main][doStr]complete
-=============================== link ================================
+[main][doStr]begin
+[main][doStr]length=1
+[main][doStr]complete
+[main][doStr]begin
+[main][doStr]length=1
+[main][doStr]complete
+[main][doStr]begin
+[main][doStr]length=1
+[main][doStr]complete
+[main][doStr]begin
+[main][doStr]length=1
+[main][doStr]complete
+[main][doStr]begin
+[main][doStr]length=1
+[main][doStr]complete
+[main][doStr]begin
+[main][doStr]length=1
+[main][doStr]complete
+[main][doStr]begin
+[main][doStr]length=1
+[main][doStr]complete
+[main][doProc]for function check:
+-------==== before linerize =====-----
+-------====IR tree=====-----
+-----=======before RA========------
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[X86frame][F_procEntryExit3] begin
+[X86frame][F_procEntryExit3] complete
+[main][doProc]==== write file ====
+[main][doProc]for function check complete
+=========================== link ==========================
+pass prime.tig
+=========================== compile ==========================
+[main][doProc]for function tigermain:
+-------==== before linerize =====-----
+-------====IR tree=====-----
+-----=======before RA========------
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[X86frame][F_procEntryExit3] begin
+[X86frame][F_procEntryExit3] complete
+[main][doProc]==== write file ====
+[main][doProc]for function tigermain complete
+[main][doProc]for function dosort:
+-------==== before linerize =====-----
+-------====IR tree=====-----
+-----=======before RA========------
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[X86frame][F_procEntryExit3] begin
+[X86frame][F_procEntryExit3] complete
+[main][doProc]==== write file ====
+[main][doProc]for function dosort complete
+[main][doStr]begin
+[main][doStr]length=1
+[main][doStr]complete
+[main][doStr]begin
+[main][doStr]length=1
+[main][doStr]complete
+[main][doProc]for function quicksort:
+-------==== before linerize =====-----
+-------====IR tree=====-----
+-----=======before RA========------
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[X86frame][F_procEntryExit3] begin
+[X86frame][F_procEntryExit3] complete
+[main][doProc]==== write file ====
+[main][doProc]for function quicksort complete
+[main][doProc]for function init:
+-------==== before linerize =====-----
+-------====IR tree=====-----
+-----=======before RA========------
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[X86frame][F_procEntryExit3] begin
+[X86frame][F_procEntryExit3] complete
+[main][doProc]==== write file ====
+[main][doProc]for function init complete
+[main][doProc]for function nop:
+-------==== before linerize =====-----
+-------====IR tree=====-----
+-----=======before RA========------
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[X86frame][F_procEntryExit3] begin
+[X86frame][F_procEntryExit3] complete
+[main][doProc]==== write file ====
+[main][doProc]for function nop complete
+[main][doStr]begin
+[main][doStr]length=0
+[main][doStr]complete
+=========================== link ==========================
+pass qsort.tig
+=========================== compile ==========================
+[main][doProc]for function tigermain:
+-------==== before linerize =====-----
+-------====IR tree=====-----
+-----=======before RA========------
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[X86frame][F_procEntryExit3] begin
+[X86frame][F_procEntryExit3] complete
+[main][doProc]==== write file ====
+[main][doProc]for function tigermain complete
+[main][doProc]for function printb:
+-------==== before linerize =====-----
+-------====IR tree=====-----
+-----=======before RA========------
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[X86frame][F_procEntryExit3] begin
+[X86frame][F_procEntryExit3] complete
+[main][doProc]==== write file ====
+[main][doProc]for function printb complete
+[main][doStr]begin
+[main][doStr]length=1
+[main][doStr]complete
+[main][doStr]begin
+[main][doStr]length=1
+[main][doStr]complete
+[main][doStr]begin
+[main][doStr]length=1
+[main][doStr]complete
+[main][doStr]begin
+[main][doStr]length=1
+[main][doStr]complete
+=========================== link ==========================
 pass tbi.tig
-[1;32mYour score: 5[0m
+=========================== compile ==========================
+[main][doProc]for function tigermain:
+-------==== before linerize =====-----
+-------====IR tree=====-----
+-----=======before RA========------
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[X86frame][F_procEntryExit3] begin
+[X86frame][F_procEntryExit3] complete
+[main][doProc]==== write file ====
+[main][doProc]for function tigermain complete
+[main][doProc]for function nfactor:
+-------==== before linerize =====-----
+-------====IR tree=====-----
+-----=======before RA========------
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[X86frame][F_procEntryExit3] begin
+[X86frame][F_procEntryExit3] complete
+[main][doProc]==== write file ====
+[main][doProc]for function nfactor complete
+=========================== link ==========================
+pass tfact.tig
+=========================== compile ==========================
+[main][doProc]for function tigermain:
+-------==== before linerize =====-----
+-------====IR tree=====-----
+-----=======before RA========------
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[X86frame][F_procEntryExit3] begin
+[X86frame][F_procEntryExit3] complete
+[main][doProc]==== write file ====
+[main][doProc]for function tigermain complete
+=========================== link ==========================
+pass tfo.tig
+=========================== compile ==========================
+[main][doProc]for function tigermain:
+-------==== before linerize =====-----
+-------====IR tree=====-----
+-----=======before RA========------
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[X86frame][F_procEntryExit3] begin
+[X86frame][F_procEntryExit3] complete
+[main][doProc]==== write file ====
+[main][doProc]for function tigermain complete
+[main][doStr]begin
+[main][doStr]length=1
+[main][doStr]complete
+[main][doProc]for function g:
+-------==== before linerize =====-----
+-------====IR tree=====-----
+-----=======before RA========------
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[X86frame][F_procEntryExit3] begin
+[X86frame][F_procEntryExit3] complete
+[main][doProc]==== write file ====
+[main][doProc]for function g complete
+[main][doStr]begin
+[main][doStr]length=20
+[main][doStr]complete
+=========================== link ==========================
+pass tifn.tig
+=========================== compile ==========================
+[main][doProc]for function tigermain:
+-------==== before linerize =====-----
+-------====IR tree=====-----
+-----=======before RA========------
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[X86frame][F_procEntryExit3] begin
+[X86frame][F_procEntryExit3] complete
+[main][doProc]==== write file ====
+[main][doProc]for function tigermain complete
+[main][doProc]for function g:
+-------==== before linerize =====-----
+-------====IR tree=====-----
+-----=======before RA========------
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[X86frame][F_procEntryExit3] begin
+[X86frame][F_procEntryExit3] complete
+[main][doProc]==== write file ====
+[main][doProc]for function g complete
+=========================== link ==========================
+pass tif.tig
+=========================== compile ==========================
+[main][doProc]for function tigermain:
+-------==== before linerize =====-----
+-------====IR tree=====-----
+-----=======before RA========------
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[X86frame][F_procEntryExit3] begin
+[X86frame][F_procEntryExit3] complete
+[main][doProc]==== write file ====
+[main][doProc]for function tigermain complete
+=========================== link ==========================
+pass trec.tig
+=========================== compile ==========================
+[main][doProc]for function tigermain:
+-------==== before linerize =====-----
+-------====IR tree=====-----
+-----=======before RA========------
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[flowgraph][FG_AssemFlowGraph] begin
+[flowgraph][FG_AssemFlowGraph] complete
+[X86frame][F_procEntryExit3] begin
+[X86frame][F_procEntryExit3] complete
+[main][doProc]==== write file ====
+[main][doProc]for function tigermain complete
+=========================== link ==========================
+pass twhi.tig
+[1;32mYour score: 85[0m

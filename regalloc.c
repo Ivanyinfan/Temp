@@ -41,12 +41,13 @@ static Live_moveList activeMoves;     //还未做好合并准备的传送指令�
 
 struct RA_result RA_regAlloc(F_frame f, AS_instrList il) {
 	//your code here
-	fprintf(stdout,"[regalloc][RA_regAllocp] begin\n");fflush(stdout);
+	//fprintf(stdout,"[regalloc][RA_regAllocp] begin\n");fflush(stdout);
 	struct RA_result ret;
 	struct Live_graph live_graph;
     bool done = FALSE;
     while (!done)
     {
+    	//fprintf(stdout,"[regalloc][RA_regAllocp] allocing\n");fflush(stdout);
         G_graph flow_graph = FG_AssemFlowGraph(il, f);
         live_graph = Live_liveness(flow_graph);
         Build(live_graph);
@@ -71,13 +72,13 @@ struct RA_result RA_regAlloc(F_frame f, AS_instrList il) {
 
     ret.il = il;
 	ret.coloring = generate_map();
-	fprintf(stdout,"[regalloc][RA_regAllocp] complete\n");fflush(stdout);
+	//fprintf(stdout,"[regalloc][RA_regAllocp] complete\n");fflush(stdout);
 	return ret;
 }
 
 static void Build(struct Live_graph g)
 {
-	//fprintf(stdout,"[regalloc][Build] begin\n");fflush(stdout);
+	////fprintf(stdout,"[regalloc][Build] begin\n");fflush(stdout);
     degree = G_empty();
     color = G_empty();
     alias = G_empty();
@@ -137,7 +138,7 @@ static void Build(struct Live_graph g)
 /* P178 procedure MakeWorklist */
 static void MakeWorklist()
 {
-	//fprintf(stdout,"[regalloc][MakeWorklist] begin\n");fflush(stdout);
+	////fprintf(stdout,"[regalloc][MakeWorklist] begin\n");fflush(stdout);
     G_nodeList nodes = G_nodes(graph);
     for (; nodes; nodes = nodes->tail)
 	{
@@ -158,7 +159,7 @@ static void MakeWorklist()
 //从图中去掉一个节点并减少相邻节点的度数
 static void Simplify()
 {
-	//fprintf(stdout,"[regalloc][Simplify] begin\n");fflush(stdout);
+	////fprintf(stdout,"[regalloc][Simplify] begin\n");fflush(stdout);
     G_node cur = simplifyWorklist->head;
     simplifyWorklist = simplifyWorklist->tail;
     /*
@@ -229,12 +230,11 @@ static bool MoveRelated(G_node n)
 
 static void Coalesce()
 {
-	//fprintf(stdout,"[regalloc][Coalesce] begin\n");fflush(stdout);
+	////fprintf(stdout,"[regalloc][Coalesce] begin\n");fflush(stdout);
 	//选一个点
     G_node src = worklistMoves->src;
     G_node dst = worklistMoves->dst;
 	worklistMoves = worklistMoves->tail;
-	
 	G_node u,v;
     if (precolored(GetAlias(dst)))
 	{
@@ -374,7 +374,7 @@ static void AddEdge(G_node u, G_node v)
 
 static void Freeze()
 {
-	//fprintf(stdout,"[regalloc][Freeze] begin\n");fflush(stdout);
+	////fprintf(stdout,"[regalloc][Freeze] begin\n");fflush(stdout);
     G_node u = freezeWorklist->head;
     freezeWorklist = freezeWorklist->tail;
     simplifyWorklist = G_NodeList(u, simplifyWorklist);
@@ -403,7 +403,7 @@ static void FreezeMoves(G_node u)
 
 static void SelectSpill()
 {
-	//fprintf(stdout,"[regalloc][SelectSpill] begin\n");fflush(stdout);
+	////fprintf(stdout,"[regalloc][SelectSpill] begin\n");fflush(stdout);
     G_node m = spillWorklist->head;
     int max = *(int *)G_look(rank, m);
 	/* 根据rank的值来选择溢出的点 */
@@ -431,7 +431,7 @@ static void SelectSpill()
 
 static void AssignColors()
 {
-	//fprintf(stdout,"[regalloc][AssignColors] begin\n");fflush(stdout);
+	////fprintf(stdout,"[regalloc][AssignColors] begin\n");fflush(stdout);
     bool used[K+1];
     int i;
     spillNodes = NULL;
@@ -471,12 +471,12 @@ static void AssignColors()
         int *c = G_look(color, p->head);
         *c = *c0;
     }
-    //fprintf(stdout,"[regalloc][AssignColors] complete\n");fflush(stdout);
+    ////fprintf(stdout,"[regalloc][AssignColors] complete\n");fflush(stdout);
 }
 
 static void RewriteProgram(F_frame f, AS_instrList *pil)
 {
-	//fprintf(stdout,"[regalloc][RewriteProgram] begin\n");fflush(stdout);
+	////fprintf(stdout,"[regalloc][RewriteProgram] begin\n");fflush(stdout);
     AS_instrList il = *pil, l, last, next, new_instr;
     int off;
     while(spillNodes)
@@ -538,7 +538,7 @@ static void RewriteProgram(F_frame f, AS_instrList *pil)
 
 static Temp_map generate_map()
 {
-	//fprintf(stdout,"[regalloc][generate_map] begin\n");fflush(stdout);
+	////fprintf(stdout,"[regalloc][generate_map] begin\n");fflush(stdout);
     Temp_map res = Temp_empty();
     G_nodeList p = G_nodes(graph);
     for (; p; p = p->tail)
