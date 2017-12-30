@@ -17,6 +17,8 @@
 
 int Temp_int(Temp_temp t)
 {
+	if(!t)
+		return -1;
 	return t->num;
 }
 

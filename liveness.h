@@ -17,7 +17,7 @@ struct Live_graph {
 };
 Temp_temp Live_gtemp(G_node n);
 
-struct Live_graph Live_liveness(G_graph flow);
+struct Live_graph Live_liveness(G_graph flow,int times);
 
 Temp_tempList MachineRegs();
 bool * G_adjSet(bool * set, int cnt, int i, int j);

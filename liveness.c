@@ -10,6 +10,9 @@
 #include "flowgraph.h"
 #include "liveness.h"
 #include "table.h"
+#include "assem.h" /* for debug purpose */
+
+static int ltimes;
 
 Live_moveList Live_MoveList(G_node src, G_node dst, Live_moveList tail) {
 	Live_moveList lm = (Live_moveList) checked_malloc(sizeof(*lm));
@@ -55,7 +58,7 @@ bool * G_adjSet(bool * set, int cnt, int i, int j)
 
 void link(struct Live_graph *g, Temp_temp temp_a, Temp_temp temp_b, TAB_table temp2node, G_table rank)
 {
-	//////fprintf(stdout,"[liveness][link] a=%d,b=%d\n",Temp_int(temp_a),Temp_int(temp_b));fflush(stdout);
+	fprintf(stdout,"[liveness][link] %d a=%d,b=%d\n",ltimes,Temp_int(temp_a),Temp_int(temp_b));fflush(stdout);
     if (temp_a == temp_b || temp_a == F_FP() || temp_b == F_FP()) return; /* exclude ebp */
 
     G_node a = get_node(g->graph, temp_a, temp2node);
@@ -73,23 +76,25 @@ void link(struct Live_graph *g, Temp_temp temp_a, Temp_temp temp_b, TAB_table te
 	//////fprintf(stdout,"[liveness][link] rank change complete\n");fflush(stdout);
 	
     bool * cell = G_adjSet(g->adj, G_getNodecount(g->graph), G_getMykey(a), G_getMykey(b));
+    fprintf(stdout,"[liveness][link] %d cell=%d\n",ltimes,*cell);fflush(stdout);
     if (!*cell) {
         /* printf("link %d-%d\n", temp_a->num, temp_b->num); */
 
         *cell = TRUE;
         cell = G_adjSet(g->adj, G_getNodecount(g->graph), G_getMykey(b), G_getMykey(a));
         *cell = TRUE;
-        if (!Temp_inTempList(temp_a, MachineRegs()))
+        //if (!Temp_inTempList(temp_a, MachineRegs()))
             G_addEdge(a, b);
-        if (!Temp_inTempList(temp_b, MachineRegs()))
+        //if (!Temp_inTempList(temp_b, MachineRegs()))
             G_addEdge(b, a);
     }
     //////fprintf(stdout,"[liveness][link] complete\n");fflush(stdout);
 }
 
-struct Live_graph Live_liveness(G_graph flow) {
+struct Live_graph Live_liveness(G_graph flow,int times) {
 	//your code here.
 	//fprintf(stdout,"[liveness][Live_liveness] begin\n");fflush(stdout);
+	ltimes=times;
 	struct Live_graph lg;
     G_table in = G_empty();//节点n和in[n]的对应
     G_table out = G_empty();//节点n和out[n]的对应
@@ -143,7 +148,17 @@ struct Live_graph Live_liveness(G_graph flow) {
             }
         }
     }
-    ////fprintf(stdout,"[liveness][Live_liveness] in out complete\n");fflush(stdout);
+    fprintf(stdout,"[liveness][Live_liveness] in out result:\n");fflush(stdout);
+    for(G_nodeList n=G_nodes(flow);n;n=n->tail)
+    {
+    	AS_instr inst=G_nodeInfo(n->head);
+    	Temp_tempList inn = *(Temp_tempList*)G_look(in, n->head);
+        Temp_tempList outn = *(Temp_tempList*)G_look(out, n->head);
+        fprintf(stdout,"[liveness][Live_liveness] instr %d:\n",inst->key);fflush(stdout);
+        fprintf(stdout,"[liveness][Live_liveness] in:");printTempList(stdout,inn);fflush(stdout);
+        fprintf(stdout,"[liveness][Live_liveness] out:");printTempList(stdout,outn);fflush(stdout);
+    }
+    
     lg.moves = NULL;
     lg.graph = G_Graph();
     lg.rank = G_empty();
@@ -171,6 +186,8 @@ struct Live_graph Live_liveness(G_graph flow) {
     
     /* 预着色节点之间相互连接 */
     lg.adj = checked_malloc(G_getNodecount(lg.graph) * G_getNodecount(lg.graph) * sizeof(bool));
+    //for(bool *i=lg.adj;i<G_getNodecount(lg.graph)*G_getNodecount(lg.graph);++i)
+    //*i=FALSE;	
     for (Temp_tempList m1 = MachineRegs(); m1; m1 = m1->tail)
 	{
         for (Temp_tempList m2 = MachineRegs(); m2; m2 = m2->tail)

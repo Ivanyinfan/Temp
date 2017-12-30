@@ -39,17 +39,18 @@ static Live_moveList frozenMoves;     //不再考虑合并的传送指令集合
 static Live_moveList worklistMoves;   //有可能合并的传送指令集合
 static Live_moveList activeMoves;     //还未做好合并准备的传送指令集合
 
+static int times;
 struct RA_result RA_regAlloc(F_frame f, AS_instrList il) {
 	//your code here
-	//fprintf(stdout,"[regalloc][RA_regAllocp] begin\n");fflush(stdout);
+	fprintf(stdout,"[regalloc][RA_regAllocp] begin\n");fflush(stdout);
 	struct RA_result ret;
 	struct Live_graph live_graph;
     bool done = FALSE;
-    while (!done)
+    for(times=1;!done;++times)
     {
-    	//fprintf(stdout,"[regalloc][RA_regAllocp] allocing\n");fflush(stdout);
+    	fprintf(stdout,"[regalloc][RA_regAllocp] allocing\n");fflush(stdout);
         G_graph flow_graph = FG_AssemFlowGraph(il, f);
-        live_graph = Live_liveness(flow_graph);
+        live_graph = Live_liveness(flow_graph,times);
         Build(live_graph);
         MakeWorklist();
         while (simplifyWorklist || spillWorklist || worklistMoves || freezeWorklist)
@@ -72,13 +73,13 @@ struct RA_result RA_regAlloc(F_frame f, AS_instrList il) {
 
     ret.il = il;
 	ret.coloring = generate_map();
-	//fprintf(stdout,"[regalloc][RA_regAllocp] complete\n");fflush(stdout);
+	fprintf(stdout,"[regalloc][RA_regAllocp] complete\n");fflush(stdout);
 	return ret;
 }
 
 static void Build(struct Live_graph g)
 {
-	////fprintf(stdout,"[regalloc][Build] begin\n");fflush(stdout);
+	fprintf(stdout,"[regalloc][Build] begin\n");fflush(stdout);
     degree = G_empty();
     color = G_empty();
     alias = G_empty();
@@ -138,7 +139,7 @@ static void Build(struct Live_graph g)
 /* P178 procedure MakeWorklist */
 static void MakeWorklist()
 {
-	////fprintf(stdout,"[regalloc][MakeWorklist] begin\n");fflush(stdout);
+	fprintf(stdout,"[regalloc][MakeWorklist] begin\n");fflush(stdout);
     G_nodeList nodes = G_nodes(graph);
     for (; nodes; nodes = nodes->tail)
 	{
@@ -159,7 +160,7 @@ static void MakeWorklist()
 //从图中去掉一个节点并减少相邻节点的度数
 static void Simplify()
 {
-	////fprintf(stdout,"[regalloc][Simplify] begin\n");fflush(stdout);
+	fprintf(stdout,"[regalloc][Simplify] begin\n");fflush(stdout);
     G_node cur = simplifyWorklist->head;
     simplifyWorklist = simplifyWorklist->tail;
     /*
@@ -167,6 +168,7 @@ static void Simplify()
     printf("pushed: %d\n", Live_gtemp(cur)->num);
     */
     selectStack = G_NodeList(cur, selectStack);
+    fprintf(stdout,"[regalloc][Simplify] simplify %d\n",Temp_int(G_nodeInfo(cur)));fflush(stdout);
     for (G_nodeList p = Adjacent(cur); p; p = p->tail)
         DecrementDegree(p->head);
 }
@@ -230,7 +232,7 @@ static bool MoveRelated(G_node n)
 
 static void Coalesce()
 {
-	////fprintf(stdout,"[regalloc][Coalesce] begin\n");fflush(stdout);
+	fprintf(stdout,"[regalloc][Coalesce] begin\n");fflush(stdout);
 	//选一个点
     G_node src = worklistMoves->src;
     G_node dst = worklistMoves->dst;
@@ -266,6 +268,7 @@ static void Coalesce()
     }
 	else if ((precolored(u) && OK(v, u)) || (!precolored(u) && Conservative(G_UnionNodeList(Adjacent(u), Adjacent(v)))))
 	{
+		fprintf(stdout,"[regalloc][Coalesce] coalesce %d %d\n",Temp_int(G_nodeInfo(u)),Temp_int(G_nodeInfo(v)));fflush(stdout);
         coalescedMoves = Live_MoveList(src, dst, coalescedMoves);
         Combine(u, v);
         AddWorklist(u);
@@ -278,7 +281,7 @@ static void Coalesce()
 
 static G_node GetAlias(G_node n)
 {
-    G_node * a = G_look(alias, n);
+    G_node  *a = G_look(alias, n);
     if (*a != n) {
         *a = GetAlias(*a);
     }
@@ -325,21 +328,26 @@ static bool Conservative(G_nodeList nodes)
     return (k < K);
 }
 
+/* 用于Coalesce选定后合并两个节点 */
 static void Combine(G_node u, G_node v)
 {
+	fprintf(stdout,"[regalloc][Combine] %d u=%d,v=%d\n",times,Temp_int(G_nodeInfo(u)),Temp_int(G_nodeInfo(v)));fflush(stdout);
     if (G_inNodeList(v, freezeWorklist))
         freezeWorklist = G_SubNodeList(freezeWorklist, G_NodeList(v, NULL));
     else
         spillWorklist = G_SubNodeList(spillWorklist, G_NodeList(v, NULL));
     coalescedNodes = G_NodeList(v, coalescedNodes);
     G_node * al = G_look(alias, v);
+    fprintf(stdout,"[regalloc][Combine] %d alias[v]=%d\n",times,Temp_int(G_nodeInfo(*al)));fflush(stdout);
     *al = u;
     for (G_nodeList t = Adjacent(v); t; t = t->tail)
 	{
+		fprintf(stdout,"[regalloc][Combine] Adjacent(v)=%d\n",Temp_int(G_nodeInfo(t->head)));fflush(stdout);
         AddEdge(t->head, u);
         DecrementDegree(t->head);
     }
     int * deg = G_look(degree, u);
+    fprintf(stdout,"[regalloc][Combine] deg=%d\n",*deg);fflush(stdout);
     if (*deg >= K && G_inNodeList(u, freezeWorklist))
 	{
         freezeWorklist = G_SubNodeList(freezeWorklist, G_NodeList(u, NULL));
@@ -349,7 +357,9 @@ static void Combine(G_node u, G_node v)
 
 static void AddEdge(G_node u, G_node v)
 {
+	fprintf(stdout,"[regalloc][AddEdge] %d u=%d,v=%d\n",times,Temp_int(Live_gtemp(u)),Temp_int(Live_gtemp(v)));fflush(stdout);
     bool * cell = G_adjSet(adjSet, G_getNodecount(graph), G_getMykey(u), G_getMykey(v));
+    fprintf(stdout,"[regalloc][AddEdge] %d cell=%d\n",times,*cell);fflush(stdout);
     if (u != v && !*cell) {
         /*
         Temp_temp a = G_nodeInfo(u);
@@ -403,7 +413,7 @@ static void FreezeMoves(G_node u)
 
 static void SelectSpill()
 {
-	////fprintf(stdout,"[regalloc][SelectSpill] begin\n");fflush(stdout);
+	fprintf(stdout,"[regalloc][SelectSpill] begin\n");fflush(stdout);
     G_node m = spillWorklist->head;
     int max = *(int *)G_look(rank, m);
 	/* 根据rank的值来选择溢出的点 */
@@ -424,6 +434,7 @@ static void SelectSpill()
     int *d = G_look(degree, m);
     printf("spill: %d %x %d\n", a->num, adjacent(m), *d);
     */
+    fprintf(stdout,"[regalloc][SelectSpill] spill %d\n",Temp_int(G_nodeInfo(m)));fflush(stdout);
     spillWorklist = G_SubNodeList(spillWorklist, G_NodeList(m, NULL));
     simplifyWorklist = G_NodeList(m, simplifyWorklist);
     FreezeMoves(m);
@@ -431,7 +442,7 @@ static void SelectSpill()
 
 static void AssignColors()
 {
-	////fprintf(stdout,"[regalloc][AssignColors] begin\n");fflush(stdout);
+	fprintf(stdout,"[regalloc][AssignColors] %d begin\n",times);fflush(stdout);
     bool used[K+1];
     int i;
     spillNodes = NULL;
@@ -439,6 +450,7 @@ static void AssignColors()
     {
         G_node cur = selectStack->head;
         selectStack = selectStack->tail;
+        fprintf(stdout,"[regalloc][AssignColors] %d cur=%d\n",times,Temp_int(Live_gtemp(cur)));fflush(stdout);
         /*
         printf("coloring %d\n", Live_gtemp(cur)->num);
         assert(GetAlias(cur) == cur);
@@ -447,11 +459,13 @@ static void AssignColors()
         for (i = 1; i <= K; ++i) {
             used[i] = FALSE;
         }
-        for (G_nodeList p = G_succ(cur); p; p = p->tail) {
+        for (G_nodeList p = G_succ(cur); p; p = p->tail)
+        {
             int *t = G_look(color, GetAlias(p->head));
-            /* printf("color of %d is %d\n", Live_gtemp(p->head)->num, *t); */
+            fprintf(stdout,"[regalloc][AssignColors] %d curSucc=%d,color=%d\n",times,Temp_int(Live_gtemp(p->head)),*t);fflush(stdout);
             used[*t] = TRUE;
         }
+        fprintf(stdout,"[regalloc][AssignColors] %d get succ complete\n",times);fflush(stdout);
         for (i = 1; i <= K; ++i) {
             if (!used[i]) {
                 break;
@@ -462,14 +476,17 @@ static void AssignColors()
         } else {
             int *c = G_look(color, cur);
             *c = i;
-			
+			fprintf(stdout,"[regalloc][AssignColors] %d %d=%s\n",times,Temp_int(Live_gtemp(cur)),reg_names[i]);fflush(stdout);
         }
     }
     for (G_nodeList p = G_nodes(graph); p != NULL; p = p->tail)
     {
+    	fprintf(stdout,"[regalloc][AssignColors] %d GetAlias(p->head)=%d\n",times,Temp_int(Live_gtemp(GetAlias(p->head))));fflush(stdout);
+    	fprintf(stdout,"[regalloc][AssignColors] %d p->head=%d\n",times,Temp_int(Live_gtemp(p->head)));fflush(stdout);
         int *c0 = G_look(color, GetAlias(p->head));
         int *c = G_look(color, p->head);
         *c = *c0;
+        fprintf(stdout,"[regalloc][AssignColors] %d %d=%d=%s\n",times,Temp_int(Live_gtemp(p->head)),Temp_int(Live_gtemp(GetAlias(p->head))),reg_names[*c]);fflush(stdout);
     }
     ////fprintf(stdout,"[regalloc][AssignColors] complete\n");fflush(stdout);
 }
@@ -485,7 +502,7 @@ static void RewriteProgram(F_frame f, AS_instrList *pil)
         spillNodes = spillNodes->tail;
         /* assert(!precolored(cur)); */
         Temp_temp c = Live_gtemp(cur);
-
+		fprintf(stdout,"[regalloc][RewriteProgram] spill %d\n",Temp_int(c));fflush(stdout);
         off = F_spill(f);
 
         l = il;
@@ -501,6 +518,7 @@ static void RewriteProgram(F_frame f, AS_instrList *pil)
                 if (t == NULL)
 				{
                     t = Temp_newtemp();
+                    //fprintf(stdout,"[regalloc][RewriteProgram] newTemp=%d\n",Temp_int(t));fflush(stdout);
                     t->spilled = TRUE;
                 }
                 *use = Temp_replaceTempList(*use, c, t);

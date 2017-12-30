@@ -10,7 +10,7 @@ movl %ebx, -24(%ebp)
 
 movl %esi, %esi
 movl %edi, %edi
-L25:
+L23:
 movl $8, %eax
 movl %eax, -4(%ebp)
 movl $-8, %eax
@@ -25,62 +25,62 @@ call initArray
 movl %eax, %eax
 movl %eax, %eax
 movl %eax, (%ebx)
-movl $-12, %ebx
-movl %ebp, %eax
-addl %ebx, %eax
-movl %eax, %eax
-movl $0, %ebx
-pushl %ebx
-movl -4(%ebp), %ebx
-pushl %ebx
+movl $-12, %eax
+movl %ebp, %ebx
+addl %eax, %ebx
+movl %ebx, %ebx
+movl $0, %eax
+pushl %eax
+movl -4(%ebp), %eax
+pushl %eax
 call initArray
 movl %eax, %eax
 movl %eax, %eax
-movl %eax, (%eax)
-movl $-16, %ebx
-movl %ebp, %eax
-addl %ebx, %eax
-movl %eax, %eax
-movl $0, %ebx
-pushl %ebx
-movl -4(%ebp), %ebx
+movl %eax, (%ebx)
+movl $-16, %eax
+movl %ebp, %ebx
+addl %eax, %ebx
+movl %ebx, %ebx
+movl $0, %eax
+pushl %eax
+movl -4(%ebp), %eax
 movl -4(%ebp), %ecx
-movl %ebx, %ebx
-addl %ecx, %ebx
+movl %eax, %eax
+addl %ecx, %eax
 movl $1, %ecx
-movl %ebx, %ebx
-subl %ecx, %ebx
-pushl %ebx
+movl %eax, %eax
+subl %ecx, %eax
+pushl %eax
 call initArray
 movl %eax, %eax
 movl %eax, %eax
-movl %eax, (%eax)
-movl $-20, %ebx
-movl %ebp, %eax
-addl %ebx, %eax
-movl %eax, %eax
-movl $0, %ebx
-pushl %ebx
-movl -4(%ebp), %ebx
+movl %eax, (%ebx)
+movl $-20, %eax
+movl %ebp, %ebx
+addl %eax, %ebx
+movl %ebx, %ebx
+movl $0, %eax
+pushl %eax
+movl -4(%ebp), %eax
 movl -4(%ebp), %ecx
-movl %ebx, %ebx
-addl %ecx, %ebx
+movl %eax, %eax
+addl %ecx, %eax
 movl $1, %ecx
-movl %ebx, %ebx
-subl %ecx, %ebx
-pushl %ebx
+movl %eax, %eax
+subl %ecx, %eax
+pushl %eax
 call initArray
 movl %eax, %eax
 movl %eax, %eax
-movl %eax, (%eax)
+movl %eax, (%ebx)
 movl $0, %eax
 pushl %eax
 pushl %ebp
 call try
 movl %eax, %eax
 movl %eax, %eax
-jmp L24
-L24:
+jmp L22
+L22:
 movl %edi, %edi
 movl %esi, %esi
 movl -24(%ebp), %ebx
@@ -97,22 +97,16 @@ try:
 pushl %ebp
 movl %esp,%ebp
 subl $16,%esp
-movl %ebx, %eax
-movl %eax, -4(%ebp)
+movl %ebx, %ebx
+movl %ebx, -4(%ebp)
 
-movl %esi, %eax
-movl %eax, -8(%ebp)
+movl %esi, %ebx
+movl %ebx, -8(%ebp)
 
-movl %edi, %eax
-movl %eax, -12(%ebp)
+movl %edi, %ebx
+movl %ebx, -12(%ebp)
 
-L27:
-movl $L12, %eax
-pushl %eax
-call print
-movl %eax, %eax
-call flush
-movl %eax, %eax
+L25:
 movl 12(%ebp), %ebx
 movl 8(%ebp), %ecx
 movl -4(%ecx), %ecx
@@ -132,8 +126,8 @@ movl %ebx, -16(%ebp)
 movl -16(%ebp), %ebx
 
 cmp %ebx, %esi
-jg L13
-L21:
+jg L11
+L19:
 movl 8(%ebp), %ebx
 movl -8(%ebx), %ecx
 movl $4, %edx
@@ -148,14 +142,14 @@ je ifTrueL1
 ifFalseL1:
 movl $0, %ebx
 movl %ebx, %ebx
-L14:
+L12:
 movl $0, %ecx
 cmp %ecx, %ebx
 jne ifTrueL2
 ifFalseL2:
 movl $0, %ecx
 movl %ecx, %ecx
-L17:
+L15:
 movl $0, %ebx
 cmp %ebx, %ecx
 jne ifTrueL3
@@ -163,22 +157,22 @@ ifFalseL3:
 movl -16(%ebp), %ebx
 
 cmp %ebx, %esi
-je L13
-L22:
+je L11
+L20:
 movl $1, %ecx
 movl %esi, %ebx
 addl %ecx, %ebx
 movl %ebx, %esi
-jmp L21
+jmp L19
 ifTrueL4:
 movl 8(%ebp), %eax
 pushl %eax
 call printboard
 movl %eax, %ebx
 movl %ebx, %ebx
-L23:
+L21:
 movl %ebx, %eax
-jmp L26
+jmp L24
 ifTrueL1:
 movl $1, %ebx
 movl %ebx, %ebx
@@ -195,13 +189,13 @@ addl %ecx, %edi
 movl (%edi), %ecx
 movl $0, %edx
 cmp %edx, %ecx
-je L15
-L16:
+je L13
+L14:
 movl $0, %ebx
 movl %ebx, %ebx
-L15:
+L13:
 movl %ebx, %ebx
-jmp L14
+jmp L12
 ifTrueL2:
 movl $1, %ecx
 movl %ecx, %ecx
@@ -221,13 +215,13 @@ addl %edx, %ebx
 movl (%ebx), %ebx
 movl $0, %edx
 cmp %edx, %ebx
-je L18
-L19:
+je L16
+L17:
 movl $0, %ecx
 movl %ecx, %ecx
-L18:
+L16:
 movl %ecx, %ecx
-jmp L17
+jmp L15
 ifTrueL3:
 movl $1, %ecx
 movl 8(%ebp), %eax
@@ -320,11 +314,11 @@ movl %ecx, %ebx
 addl %edi, %ebx
 movl %edx, (%ebx)
 jmp ifFalseL3
-L13:
+L11:
 movl $0, %ebx
 movl %ebx, %ebx
-jmp L23
-L26:
+jmp L21
+L24:
 movl -12(%ebp), %edi
 
 movl %edi, %edi
@@ -338,10 +332,6 @@ movl %ebx, %ebx
 leave
 ret
 
-.section .rodata
-L12:
-.int 14
-.string "[queens][try]\n"
 .text
 .global printboard
 .type printboard, @function
@@ -358,13 +348,7 @@ movl %esi, -8(%ebp)
 movl %edi, %edi
 movl %edi, -12(%ebp)
 
-L29:
-movl $L0, %eax
-pushl %eax
-call print
-movl %eax, %eax
-call flush
-movl %eax, %eax
+L27:
 movl $0, %eax
 movl %eax, %eax
 movl %eax, -16(%ebp)
@@ -378,8 +362,8 @@ movl %esi, %esi
 movl -16(%ebp), %eax
 
 cmp %esi, %eax
-jg L1
-L9:
+jg L0
+L8:
 movl $0, %ebx
 movl %ebx, %ebx
 movl 8(%ebp), %eax
@@ -389,8 +373,8 @@ movl %edi, %edi
 subl %eax, %edi
 movl %edi, %edi
 cmp %edi, %ebx
-jg L2
-L6:
+jg L1
+L5:
 movl 8(%ebp), %eax
 movl -12(%eax), %ecx
 movl $4, %eax
@@ -404,34 +388,34 @@ movl (%ecx), %eax
 cmp %ebx, %eax
 je ifTrueL0
 ifFalseL0:
-movl $L4, %eax
+movl $L3, %eax
 movl %eax, %eax
-L5:
+L4:
 pushl %eax
 call print
 movl %eax, %eax
 cmp %edi, %ebx
-je L2
-L7:
+je L1
+L6:
 movl $1, %eax
 movl %ebx, %ebx
 addl %eax, %ebx
 movl %ebx, %ebx
-jmp L6
-ifTrueL0:
-movl $L3, %eax
-movl %eax, %eax
 jmp L5
-L2:
-movl $L8, %eax
+ifTrueL0:
+movl $L2, %eax
+movl %eax, %eax
+jmp L4
+L1:
+movl $L7, %eax
 pushl %eax
 call print
 movl %eax, %eax
 movl -16(%ebp), %eax
 
 cmp %esi, %eax
-je L1
-L10:
+je L0
+L9:
 movl $1, %ebx
 movl -16(%ebp), %eax
 
@@ -440,15 +424,15 @@ addl %ebx, %eax
 movl %eax, %eax
 movl %eax, -16(%ebp)
 
-jmp L9
-L1:
-movl $L11, %eax
+jmp L8
+L0:
+movl $L10, %eax
 pushl %eax
 call print
 movl %eax, %eax
 movl %eax, %eax
-jmp L28
-L28:
+jmp L26
+L26:
 movl -12(%ebp), %edi
 
 movl %edi, %edi
@@ -463,22 +447,18 @@ leave
 ret
 
 .section .rodata
-L11:
+L10:
 .int 1
 .string "\n"
 .section .rodata
-L8:
+L7:
 .int 1
 .string "\n"
-.section .rodata
-L4:
-.int 2
-.string " ."
 .section .rodata
 L3:
 .int 2
-.string " O"
+.string " ."
 .section .rodata
-L0:
-.int 14
-.string "[queens][try]\n"
+L2:
+.int 2
+.string " O"

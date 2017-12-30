@@ -52,7 +52,7 @@ static void doProc(FILE *out, F_frame frame, T_stm body)
  printf("-------====IR tree=====-----\n");
 
  stmList = C_linearize(body);
- printStmList(stdout, stmList);
+ //printStmList(stdout, stmList);
  //fprintf(stdout,"--------=====Linearlized======------\n");fflush(stdout);
 
  blo = C_basicBlocks(stmList);

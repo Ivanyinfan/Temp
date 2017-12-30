@@ -12,7 +12,6 @@ let
 
     function printboard() =
        (
-       	print("[queens][try]\n");flush();
        	for i := 0 to N-1
 	 	do (
 	 		for j := 0 to N-1 
@@ -23,7 +22,7 @@ let
 
     function try(c:int) = 
 ( /*  for i:= 0 to c do print("."); print("\n"); flush();*/
-	 print("[queens][try]\n");flush();
+
      if c=N
      then printboard()
      else for r := 0 to N-1

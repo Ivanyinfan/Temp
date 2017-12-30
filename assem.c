@@ -201,9 +201,9 @@ void printASInstr(FILE *out,AS_instr i)
 		case I_OPER:
 			fprintf(out,"I_OPER :%s\n",i->u.OPER.assem);
 			fprintf(out,"        src=");
-			printTempList(out,i->u.OPER.dst);
+			printTempList(out,i->u.OPER.src);
 			fprintf(out,"        dst=");
-			printTempList(out,i->u.MOVE.dst);
+			printTempList(out,i->u.OPER.dst);
 			fprintf(out,"        targets=");
 			printTempLabelList(out,i->u.OPER.jumps->labels);
 			break;
@@ -211,9 +211,9 @@ void printASInstr(FILE *out,AS_instr i)
 			fprintf(out,"I_LABEL:%s\n",i->u.LABEL.assem);
 			break;
 		case I_MOVE:
-			fprintf(out,"I_MOVE :%s",i->u.MOVE.assem);
+			fprintf(out,"I_MOVE :%s\n",i->u.MOVE.assem);
 			fprintf(out,"        src=");
-			printTempList(out,i->u.OPER.dst);
+			printTempList(out,i->u.MOVE.src);
 			fprintf(out,"        dst=");
 			printTempList(out,i->u.MOVE.dst);
 			break;
