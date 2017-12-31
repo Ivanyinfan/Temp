@@ -472,9 +472,6 @@ static T_exp staticLink(Tr_level a, Tr_level b)
 //将函数参数反序组成T_expList
 static T_expList T_ExpList2(Tr_expList args)
 {
-	/*if(!args)
-		return NULL;
-	return TExp_splice(T_ExpList2(args->tail),T_ExpList(unEx(args->head),NULL));*/
 	T_expList ret=NULL;
 	for(;args;args=args->tail)
 		ret=T_ExpList(unEx(args->head),ret);

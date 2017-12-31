@@ -46,10 +46,10 @@ static void doProc(FILE *out, F_frame frame, T_stm body)
 
  F_tempMap = Temp_empty();
 
- fprintf(stdout,"[main][doProc]for function %s:\n", S_name(F_name(frame)));fflush(stdout);
- printf("-------==== before linerize =====-----\n");
+ //fprintf(stdout,"[main][doProc]for function %s:\n", S_name(F_name(frame)));fflush(stdout);
+ //printf("-------==== before linerize =====-----\n");
  //printStmList(stdout, T_StmList(body, NULL));
- printf("-------====IR tree=====-----\n");
+ //printf("-------====IR tree=====-----\n");
 
  stmList = C_linearize(body);
  //printStmList(stdout, stmList);
@@ -68,7 +68,7 @@ static void doProc(FILE *out, F_frame frame, T_stm body)
  iList  = F_codegen(frame, stmList); /* 9 */
 
  //AS_printInstrList(stdout, iList, Temp_layerMap(F_tempMap, Temp_name()));
- printf("-----=======before RA========------\n");
+ //printf("-----=======before RA========------\n");
 
  //G_graph fg = FG_AssemFlowGraph(iList);  /* 10.1 */
  struct RA_result ra = RA_regAlloc(frame, iList);  /* 11 */
@@ -82,7 +82,7 @@ static void doProc(FILE *out, F_frame frame, T_stm body)
  fprintf(out, ".global %s\n", procName);
  fprintf(out, ".type %s, @function\n", procName);
  fprintf(out, "%s:\n", procName);
- fprintf(stdout,"[main][doProc]==== write file ====\n");fflush(stdout);
+ //fprintf(stdout,"[main][doProc]==== write file ====\n");fflush(stdout);
  //fprintf(out, "BEGIN function\n");
  AS_printInstrList (out, proc->body,
                        Temp_layerMap(F_tempMap, ra.coloring));
@@ -108,11 +108,11 @@ static void doProc(FILE *out, F_frame frame, T_stm body)
  fprintf(out, "%s", proc->epilog);
  //fprintf(out, "END %s\n\n", Temp_labelstring(F_name(frame)));
  */
- fprintf(stdout,"[main][doProc]for function %s complete\n", S_name(F_name(frame)));fflush(stdout);
+ //fprintf(stdout,"[main][doProc]for function %s complete\n", S_name(F_name(frame)));fflush(stdout);
 }
 
 void doStr(FILE *out, Temp_label label, string str) {
-	fprintf(stdout,"[main][doStr]begin\n");fflush(stdout);
+	//fprintf(stdout,"[main][doStr]begin\n");fflush(stdout);
 	
 	fprintf(out, ".section .rodata\n");
 	fprintf(out, "%s:\n", S_name(label));
@@ -123,7 +123,7 @@ void doStr(FILE *out, Temp_label label, string str) {
 	int length=strlen(str);
 	string rstr=recoverString(str);
 	int newlength=strlen(rstr);
-	fprintf(stdout,"[main][doStr]length=%d\n",length);fflush(stdout);
+	//fprintf(stdout,"[main][doStr]length=%d\n",length);fflush(stdout);
 	fprintf(out, ".int %d\n",length);
 	fprintf(out, ".string \"");
 	for (int i=0; i < newlength; i++) {
@@ -132,7 +132,7 @@ void doStr(FILE *out, Temp_label label, string str) {
 	fprintf(out, "\"\n");
 
 	//fprintf(out, ".string \"%s\"\n", str);
-	fprintf(stdout,"[main][doStr]complete\n");fflush(stdout);
+	//fprintf(stdout,"[main][doStr]complete\n");fflush(stdout);
 }
 
 int main(int argc, string *argv)

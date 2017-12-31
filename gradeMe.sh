@@ -21,12 +21,12 @@ score=0
 
 #pwd
 echo "=========================== make =========================="
-#make clean >& /dev/null
+make clean >& /dev/null
 make
-#echo $?
+echo $?
 if [[ $? != 0 ]]; then
 	echo -e "${RED_COLOR}[-_-]$ite: Compile Error${RES}"		
-	#make clean >& /dev/null
+	make clean >& /dev/null
 	exit 123
 fi	
 	for tcase in `ls $TESTCASEDIR/`
@@ -39,7 +39,7 @@ fi
 			gcc -Wl,--wrap,getchar -m32 $TESTCASEDIR/${tfileName}.s runtime.c -o test.out 
 			if [ ! -s test.out ]; then
 				echo -e "${BLUE_COLOR}[*_*]$ite: Link error. [$tfileName]${RES}"
- 				#rm $TESTCASEDIR/${tfileName}.s 
+ 				rm $TESTCASEDIR/${tfileName}.s 
 
 				continue
 #exit 345
@@ -57,28 +57,28 @@ fi
 					diff $DIFFOPTION _tmp.txt $MERGEREFDIR/${mergecase%.*}.out >& _ref.txt
 					if [ -s _ref.txt ]; then
 						echo -e "${BLUE_COLOR}[*_*]$ite: Output mismatches. [$tfileName]${RES}"
-						#rm -f _tmp.txt _ref.txt $TESTCASEDIR/${tfileName}.s test.out
+						rm -f _tmp.txt _ref.txt $TESTCASEDIR/${tfileName}.s test.out
 						continue
 #exit 234
 					fi
 					result=$((result+2))
 					count=$((count+1))
 					echo "pass Merge"
-					#rm -f _tmp.txt _ref.txt 
+					rm -f _tmp.txt _ref.txt 
 				done	
 				score=$((score+result+count/2))
-				#rm -f test.out $TESTCASEDIR/${tfileName}.s
+				rm -f test.out $TESTCASEDIR/${tfileName}.s
 			else	
 				./test.out > _tmp.txt
 				diff $DIFFOPTION _tmp.txt $REFOUTDIR/${tfileName%.*}.out >& _ref.txt
 				if [ -s _ref.txt ]; then
 					echo -e "${BLUE_COLOR}[*_*]$ite: Output mismatches. [$tfileName]${RES}"
-					#rm -f _tmp.txt _ref.txt $TESTCASEDIR/${tfileName}.s test.out
+					rm -f _tmp.txt _ref.txt $TESTCASEDIR/${tfileName}.s test.out
 					continue
 #					exit 234
 				fi
 				
-				#rm -f _tmp.txt _ref.txt $TESTCASEDIR/${tfileName}.s test.out				
+				rm -f _tmp.txt _ref.txt $TESTCASEDIR/${tfileName}.s test.out				
 				echo -e "pass ${tfileName}"
 				tname=${tfileName##t}
 				if [ $tname = $tfileName ]; then
@@ -91,5 +91,5 @@ fi
 		fi
 	done
 
-#make clean >& /dev/null
+make clean >& /dev/null
 echo -e "${GREEN_COLOR}${ite}Your score: ${score}${RES}"

@@ -52,12 +52,10 @@ bool FG_isMove(G_node n) {
 /* 根据指令表产生控制流图 */
 G_graph FG_AssemFlowGraph(AS_instrList il, F_frame f) {
 	//your code here.
-	fprintf(stdout,"[flowgraph][FG_AssemFlowGraph] begin\n");fflush(stdout);
-	TAB_table instruction = TAB_empty();//指令表，根据指令找节点
-	TAB_table label = TAB_empty();//编号表，根据编号找节点，处理jump和cjump
+	TAB_table instruction = TAB_empty();
+	TAB_table label = TAB_empty();
     G_graph ret = G_Graph();
-    G_node last = NULL; /* 上一个节点 */
-    /* 先遍历一遍，建立节点和各自的位置 */
+    G_node last = NULL;
     for (AS_instrList i = il; i; i = i->tail)
     {
         G_node node = G_Node(ret, i->head);
@@ -68,7 +66,6 @@ G_graph FG_AssemFlowGraph(AS_instrList il, F_frame f) {
         if (i->head->kind == I_LABEL)
             TAB_enter(label, i->head->u.LABEL.label, node);
     }
-    /* 再遍历一遍，处理跳转 */
     for (AS_instrList i = il; i; i = i->tail)
     {
         if (i->head->kind == I_OPER)
@@ -79,6 +76,5 @@ G_graph FG_AssemFlowGraph(AS_instrList il, F_frame f) {
                 G_addEdge(node, TAB_look(label, labels->head));
         }
     }
-    fprintf(stdout,"[flowgraph][FG_AssemFlowGraph] complete\n");fflush(stdout);
     return ret;
 }

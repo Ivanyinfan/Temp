@@ -1,5 +1,0 @@
-let
-	var buffer := getchar()
-in
-	print(buffer)
-end

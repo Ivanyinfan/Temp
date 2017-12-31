@@ -9,8 +9,6 @@ typedef char bool;
 #define TRUE 1
 #define FALSE 0
 
-FILE *logFile;
-
 void *checked_malloc(int);
 string String(char *);
 char *recoverString(char *s);

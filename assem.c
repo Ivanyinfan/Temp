@@ -108,7 +108,6 @@ static void format(char *result, string assem,
 		   Temp_tempList dst, Temp_tempList src,
 		   AS_targets jumps, Temp_map m)
 {
-  //////fprintf(stdout, "[assem][format]assem=%s, dst=%p, src=%p\n", assem, dst, src);fflush(stdout);
   char *p;
   int i = 0; /* offset to result string */
   for(p = assem; p && *p != '\0'; p++){
@@ -139,27 +138,22 @@ static void format(char *result, string assem,
       }}
     else {result[i] = *p; i++; }}
   result[i] = '\0';
-  //fprintf(stdout, "[assem][format]result=%s",result);fflush(stdout);
 }
 
 void AS_print(FILE *out, AS_instr i, Temp_map m)
 {
-  //fprintf(stdout,"[assem][AS_print] %d %s",i->key,AssemInst(i));fflush(stdout);
   char r[200]; /* result */
   switch (i->kind) {
   case I_OPER:
-  	//////fprintf(stdout,"[assem][AS_print] I_OPER\n");fflush(stdout);
     format(r, i->u.OPER.assem, i->u.OPER.dst, i->u.OPER.src, i->u.OPER.jumps, m);
     fprintf(out, "%s\n", r);
     break;
   case I_LABEL:
-  	//////fprintf(stdout,"[assem][AS_print] I_LABEL\n");fflush(stdout);
     format(r, i->u.LABEL.assem, NULL, NULL, NULL, m); 
     fprintf(out, "%s:\n", r); 
     /* i->u.LABEL->label); */
     break;
   case I_MOVE: {
-  	//////fprintf(stdout,"[assem][AS_print] I_MOVE\n");fflush(stdout);
 	if ((i->u.MOVE.dst == NULL) && (i->u.MOVE.src == NULL)) {
 		char *src = strchr(i->u.MOVE.assem, '%');
 		if (src != NULL) {
@@ -180,12 +174,10 @@ void AS_print(FILE *out, AS_instr i, Temp_map m)
 /* c should be COL_color; temporarily it is not */
 void AS_printInstrList (FILE *out, AS_instrList iList, Temp_map m)
 {
-  //fprintf(stdout,"[assem][AS_printInstrLis] iListLen=%d\n",InstrListLen(iList));fflush(stdout);
   for (; iList; iList=iList->tail) {
     AS_print(out, iList->head, m);
   }
   fprintf(out, "\n");
-  //fprintf(stdout,"[assem][AS_printInstrLis] complete\n");fflush(stdout);
 }
 
 AS_proc AS_Proc(string p, AS_instrList b, string e)

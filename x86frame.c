@@ -253,7 +253,7 @@ AS_instrList F_procEntryExit2(AS_instrList body)
 //函数进出口操作
 AS_proc F_procEntryExit3(F_frame f, AS_instrList body)
 {
-	fprintf(stdout,"[X86frame][F_procEntryExit3] begin\n");fflush(stdout);
+	//fprintf(stdout,"[X86frame][F_procEntryExit3] begin\n");fflush(stdout);
 	AS_instr inst1=AS_Oper("pushl %ebp",NULL,Temp_TempList(F_FP(),NULL),AS_Targets(NULL));
 	AS_instr inst2=AS_Move("movl %esp,%ebp",Temp_TempList(F_FP(),NULL),NULL);
 	string assem=checked_malloc(20);
@@ -263,6 +263,6 @@ AS_proc F_procEntryExit3(F_frame f, AS_instrList body)
 	AS_instr inst4=AS_Oper("leave",NULL,NULL,AS_Targets(NULL));
 	AS_instr inst5=AS_Oper("ret",NULL,NULL,AS_Targets(NULL));
 	AS_splice(body,AS_InstrList(inst4,AS_InstrList(inst5,NULL)));
-	fprintf(stdout,"[X86frame][F_procEntryExit3] complete\n");fflush(stdout);
+	//fprintf(stdout,"[X86frame][F_procEntryExit3] complete\n");fflush(stdout);
 	return AS_Proc(NULL,body,NULL);
 }
