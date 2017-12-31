@@ -27,20 +27,6 @@ Temp_temp Live_gtemp(G_node n) {
 	return G_nodeInfo(n);
 }
 
-static Temp_tempList machine_regs = NULL;
-Temp_tempList MachineRegs()
-{
-    if (!machine_regs) {
-        machine_regs = Temp_TempList(F_eax(),
-                       Temp_TempList(F_ebx(),
-                       Temp_TempList(F_ecx(),
-                       Temp_TempList(F_edx(),
-                       Temp_TempList(F_esi(),
-                       Temp_TempList(F_edi(), NULL))))));
-    }
-    return machine_regs;
-}
-
 G_node get_node(G_graph g, Temp_temp temp, TAB_table temp2node)
 {
     G_node res = TAB_look(temp2node, temp);
@@ -58,17 +44,17 @@ bool * G_adjSet(bool * set, int cnt, int i, int j)
 
 void link(struct Live_graph *g, Temp_temp temp_a, Temp_temp temp_b, TAB_table temp2node, G_table rank)
 {
-	fprintf(stdout,"[liveness][link] %d a=%d,b=%d\n",ltimes,Temp_int(temp_a),Temp_int(temp_b));fflush(stdout);
+	//fprintf(stdout,"[liveness][link] %d a=%d,b=%d\n",ltimes,Temp_int(temp_a),Temp_int(temp_b));fflush(stdout);
     if (temp_a == temp_b || temp_a == F_FP() || temp_b == F_FP()) return; /* exclude ebp */
 
     G_node a = get_node(g->graph, temp_a, temp2node);
     G_node b = get_node(g->graph, temp_b, temp2node);
-    if (!Temp_inTempList(temp_a, MachineRegs()))
+    if (!Temp_inTempList(temp_a, F_registers()))
     {
         int *r = G_look(rank, a);
         ++(*r);
     }
-    if (!Temp_inTempList(temp_b, MachineRegs()))
+    if (!Temp_inTempList(temp_b, F_registers()))
     {
         int *r = G_look(rank, b);
         ++(*r);
@@ -76,7 +62,7 @@ void link(struct Live_graph *g, Temp_temp temp_a, Temp_temp temp_b, TAB_table te
 	//////fprintf(stdout,"[liveness][link] rank change complete\n");fflush(stdout);
 	
     bool * cell = G_adjSet(g->adj, G_getNodecount(g->graph), G_getMykey(a), G_getMykey(b));
-    fprintf(stdout,"[liveness][link] %d cell=%d\n",ltimes,*cell);fflush(stdout);
+    //fprintf(stdout,"[liveness][link] %d cell=%d\n",ltimes,*cell);fflush(stdout);
     if (!*cell) {
         /* printf("link %d-%d\n", temp_a->num, temp_b->num); */
 
@@ -164,7 +150,7 @@ struct Live_graph Live_liveness(G_graph flow,int times) {
     lg.rank = G_empty();
 
     /* 为每个临时变量创建节点 */
-    for (Temp_tempList m = MachineRegs(); m; m = m->tail)
+    for (Temp_tempList m = F_registers(); m; m = m->tail)
     {
         get_node(lg.graph, m->head, temp2node);
     }
@@ -188,9 +174,9 @@ struct Live_graph Live_liveness(G_graph flow,int times) {
     lg.adj = checked_malloc(G_getNodecount(lg.graph) * G_getNodecount(lg.graph) * sizeof(bool));
     //for(bool *i=lg.adj;i<G_getNodecount(lg.graph)*G_getNodecount(lg.graph);++i)
     //*i=FALSE;	
-    for (Temp_tempList m1 = MachineRegs(); m1; m1 = m1->tail)
+    for (Temp_tempList m1 = F_registers(); m1; m1 = m1->tail)
 	{
-        for (Temp_tempList m2 = MachineRegs(); m2; m2 = m2->tail)
+        for (Temp_tempList m2 = F_registers(); m2; m2 = m2->tail)
 		{
             if (m1->head != m2->head)
 			{

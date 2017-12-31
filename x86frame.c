@@ -224,6 +224,14 @@ F_fragList F_FragList(F_frag head, F_fragList tail) {
 	return f;
 }
 
+Temp_tempList F_registers()
+{
+	static Temp_tempList registers=NULL;
+	if(!registers)
+		registers=Temp_TempList(F_eax(),Temp_TempList(F_ebx(),Temp_TempList(F_ecx(),Temp_TempList(F_edx(),Temp_TempList(F_esi(),Temp_TempList(F_edi(), NULL))))));
+	return registers;
+}
+
 //函数进出口操作
 AS_proc F_procEntryExit3(F_frame f, AS_instrList body)
 {

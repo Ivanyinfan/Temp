@@ -1,109 +1,63 @@
 .text
-.globl tigermain
+.global tigermain
 .type tigermain, @function
 tigermain:
 pushl %ebp
-
 movl %esp,%ebp
-
 subl $0,%esp
-
 movl %ebx, %ebx
-
 movl %esi, %esi
-
 movl %edi, %edi
-
-L5:
+L2:
 movl $4, %eax
-
 pushl %eax
-
 movl $9, %eax
-
 pushl %eax
-
 pushl %ebp
-
-call L0
-
+call g
 movl %eax, %eax
-
 movl %eax, %eax
-
 pushl %eax
-
 call printi
-
 movl %eax, %eax
-
 movl %eax, %eax
-
-jmp L4
-
-L4:
+jmp L1
+L1:
 movl %edi, %edi
-
 movl %esi, %esi
-
 movl %ebx, %ebx
-
-
 
 leave
-
 ret
-
 
 .text
-.globl L0
-.type L0, @function
-L0:
+.global g
+.type g, @function
+g:
 pushl %ebp
-
 movl %esp,%ebp
-
 subl $0,%esp
-
 movl %ebx, %ebx
-
 movl %esi, %esi
-
 movl %edi, %edi
-
-L7:
+L4:
 movl 12(%ebp), %ecx
-
 movl 16(%ebp), %edx
-
 cmp %edx, %ecx
-
-jg L1
-
-L2:
+jg ifTrueL0
+ifFalseL0:
 movl 16(%ebp), %ecx
-
-L3:
+L0:
 movl %ecx, %eax
-
-jmp L6
-
-L1:
-movl 12(%ebp), %ecx
-
 jmp L3
-
-L6:
+ifTrueL0:
+movl 12(%ebp), %ecx
+jmp L0
+L3:
 movl %edi, %edi
-
 movl %esi, %esi
-
 movl %ebx, %ebx
-
-
 
 leave
-
 ret
-
 

@@ -15,7 +15,6 @@
 #include "table.h"
 
 /* 控制流图 */
-/* 1、把node中的info绑定为AS_inst */
 
 /* 节点n中定值的变量组成的表 */
 Temp_tempList FG_def(G_node n) {
