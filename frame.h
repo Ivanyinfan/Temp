@@ -63,5 +63,6 @@ struct F_fragList_
 F_fragList F_FragList(F_frag head, F_fragList tail);
 
 Temp_tempList F_registers();
+AS_instrList F_procEntryExit2(AS_instrList body);
 AS_proc F_procEntryExit3(F_frame f, AS_instrList body);
 #endif

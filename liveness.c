@@ -27,7 +27,7 @@ Temp_temp Live_gtemp(G_node n) {
 	return G_nodeInfo(n);
 }
 
-G_node get_node(G_graph g, Temp_temp temp, TAB_table temp2node)
+G_node allocNode(G_graph g, Temp_temp temp, TAB_table temp2node)
 {
     G_node res = TAB_look(temp2node, temp);
     if (!res) {
@@ -42,39 +42,37 @@ bool * G_adjSet(bool * set, int cnt, int i, int j)
     return set + (j + cnt * i);
 }
 
-void link(struct Live_graph *g, Temp_temp temp_a, Temp_temp temp_b, TAB_table temp2node, G_table rank)
+void addEdge(struct Live_graph *g, Temp_temp temp_a, Temp_temp temp_b, TAB_table temp2node, G_table spillCost)
 {
-	//fprintf(stdout,"[liveness][link] %d a=%d,b=%d\n",ltimes,Temp_int(temp_a),Temp_int(temp_b));fflush(stdout);
+	//fprintf(stdout,"[liveness][addEdge] %d a=%d,b=%d\n",ltimes,Temp_int(temp_a),Temp_int(temp_b));fflush(stdout);
     if (temp_a == temp_b || temp_a == F_FP() || temp_b == F_FP()) return; /* exclude ebp */
 
-    G_node a = get_node(g->graph, temp_a, temp2node);
-    G_node b = get_node(g->graph, temp_b, temp2node);
+    G_node a = allocNode(g->graph, temp_a, temp2node);
+    G_node b = allocNode(g->graph, temp_b, temp2node);
     if (!Temp_inTempList(temp_a, F_registers()))
     {
-        int *r = G_look(rank, a);
+        int *r = G_look(spillCost, a);
         ++(*r);
     }
     if (!Temp_inTempList(temp_b, F_registers()))
     {
-        int *r = G_look(rank, b);
+        int *r = G_look(spillCost, b);
         ++(*r);
     }
-	//////fprintf(stdout,"[liveness][link] rank change complete\n");fflush(stdout);
+	//fprintf(stdout,"[liveness][addEdge] spillCost change complete\n");fflush(stdout);
 	
     bool * cell = G_adjSet(g->adj, G_getNodecount(g->graph), G_getMykey(a), G_getMykey(b));
-    //fprintf(stdout,"[liveness][link] %d cell=%d\n",ltimes,*cell);fflush(stdout);
+    //fprintf(stdout,"[liveness][addEdge] %d cell=%d\n",ltimes,*cell);fflush(stdout);
     if (!*cell) {
-        /* printf("link %d-%d\n", temp_a->num, temp_b->num); */
+        /* printf("addEdge %d-%d\n", temp_a->num, temp_b->num); */
 
         *cell = TRUE;
         cell = G_adjSet(g->adj, G_getNodecount(g->graph), G_getMykey(b), G_getMykey(a));
         *cell = TRUE;
-        //if (!Temp_inTempList(temp_a, MachineRegs()))
-            G_addEdge(a, b);
-        //if (!Temp_inTempList(temp_b, MachineRegs()))
-            G_addEdge(b, a);
+        G_addEdge(a, b);
+        G_addEdge(b, a);
     }
-    //////fprintf(stdout,"[liveness][link] complete\n");fflush(stdout);
+    //fprintf(stdout,"[liveness][addEdge] complete\n");fflush(stdout);
 }
 
 struct Live_graph Live_liveness(G_graph flow,int times) {
@@ -103,9 +101,9 @@ struct Live_graph Live_liveness(G_graph flow,int times) {
 			//保存原来的in和out
             Temp_tempList inp0 = *(Temp_tempList*)G_look(in, p->head);
             Temp_tempList outp0 = *(Temp_tempList*)G_look(out, p->head);
-            //////fprintf(stdout,"[liveness][Live_liveness] %d %s",inst->key,AssemInst(inst));
-            //////fprintf(stdout,"[liveness][Live_liveness] inp0=");printTempList(stdout,inp0);
-        	//////fprintf(stdout,"[liveness][Live_liveness] outp0=");printTempList(stdout,outp0);
+            //fprintf(stdout,"[liveness][Live_liveness] %d %s",inst->key,AssemInst(inst));
+            //fprintf(stdout,"[liveness][Live_liveness] inp0=");printTempList(stdout,inp0);
+        	//fprintf(stdout,"[liveness][Live_liveness] outp0=");printTempList(stdout,outp0);
             Temp_tempList inp, outp;
             G_nodeList succ = G_succ(p->head);
             outp = NULL;
@@ -113,11 +111,11 @@ struct Live_graph Live_liveness(G_graph flow,int times) {
             for (; succ ; succ = succ->tail)
 			{
 				AS_instr succInst=G_nodeInfo(succ->head);
-				//////fprintf(stdout,"[liveness][Live_liveness] %d %s",succInst->key,AssemInst(succInst));
+				//fprintf(stdout,"[liveness][Live_liveness] %d %s",succInst->key,AssemInst(succInst));
                 Temp_tempList ins = *(Temp_tempList*)G_look(in, succ->head);
                 outp = Temp_UnionTempList(outp, ins);
-                //////fprintf(stdout,"[liveness][Live_liveness] inp0=");printTempList(stdout,inp0);
-        		//////fprintf(stdout,"[liveness][Live_liveness] outp0=");printTempList(stdout,outp0);
+                //fprintf(stdout,"[liveness][Live_liveness] inp0=");printTempList(stdout,inp0);
+        		//fprintf(stdout,"[liveness][Live_liveness] outp0=");printTempList(stdout,outp0);
             }
 			//in[n]<-use[n]U(out[n]-def[n])
             inp = Temp_UnionTempList(FG_use(p->head), Temp_SubTempList(outp, FG_def(p->head)));
@@ -147,15 +145,15 @@ struct Live_graph Live_liveness(G_graph flow,int times) {
     
     lg.moves = NULL;
     lg.graph = G_Graph();
-    lg.rank = G_empty();
+    lg.spillCost = G_empty();
 
     /* 为每个临时变量创建节点 */
     for (Temp_tempList m = F_registers(); m; m = m->tail)
     {
-        get_node(lg.graph, m->head, temp2node);
+        allocNode(lg.graph, m->head, temp2node);
     }
     
-    /* 为每个节点设置rank值 */
+    /* 为每个节点设置spillCost值 */
     for (p = G_nodes(flow); p; p = p->tail)
 	{//对于每个节点
         for (Temp_tempList def = FG_def(p->head); def; def = def->tail)
@@ -164,11 +162,11 @@ struct Live_graph Live_liveness(G_graph flow,int times) {
 			{//如果不是frame pointer
                 int * r = checked_malloc(sizeof(int));
                 *r = 0;
-                G_enter(lg.rank, get_node(lg.graph, def->head, temp2node), r);
+                G_enter(lg.spillCost, allocNode(lg.graph, def->head, temp2node), r);
             }
         }
     }
-    ////fprintf(stdout,"[liveness][Live_liveness] alloc rank complete\n");fflush(stdout);
+    //fprintf(stdout,"[liveness][Live_liveness] alloc spillCost complete\n");fflush(stdout);
     
     /* 预着色节点之间相互连接 */
     lg.adj = checked_malloc(G_getNodecount(lg.graph) * G_getNodecount(lg.graph) * sizeof(bool));
@@ -180,11 +178,11 @@ struct Live_graph Live_liveness(G_graph flow,int times) {
 		{
             if (m1->head != m2->head)
 			{
-                link(&lg, m1->head, m2->head, temp2node, lg.rank);
+                addEdge(&lg, m1->head, m2->head, temp2node, lg.spillCost);
             }
         }
     }
-    ////fprintf(stdout,"[liveness][Live_liveness] precolor link complete\n");fflush(stdout);
+    //fprintf(stdout,"[liveness][Live_liveness] precolor addEdge complete\n");fflush(stdout);
 
 	//procedure Build()
     for (p = G_nodes(flow); p; p = p->tail)
@@ -200,26 +198,26 @@ struct Live_graph Live_liveness(G_graph flow,int times) {
                 for (Temp_tempList use = FG_use(p->head); use; use = use->tail)
 				{//for all m in use[n]
                     /* printf("move: %d-%d\n", def->head->num, use->head->num); */
-                    lg.moves = Live_MoveList(get_node(lg.graph, use->head, temp2node),
-                            get_node(lg.graph, def->head, temp2node),
+                    lg.moves = Live_MoveList(allocNode(lg.graph, use->head, temp2node),
+                            allocNode(lg.graph, def->head, temp2node),
                             lg.moves);//moveList中加入(m,n)
                 }
             }
         }
-        ////fprintf(stdout,"[liveness][Live_liveness] build1 complete\n");fflush(stdout);
+        //fprintf(stdout,"[liveness][Live_liveness] build1 complete\n");fflush(stdout);
         
-        ////fprintf(stdout,"[liveness][Live_liveness] %d %s",inst->key,AssemInst(inst));
-		////fprintf(stdout,"[liveness][Live_liveness] outp=");printTempList(stdout,outp);
+        //fprintf(stdout,"[liveness][Live_liveness] %d %s",inst->key,AssemInst(inst));
+		//fprintf(stdout,"[liveness][Live_liveness] outp=");printTempList(stdout,outp);
 
         for (Temp_tempList def = FG_def(p->head); def; def = def->tail)
 		{//for all d in def[n]
             for (op = outp; op; op = op->tail)
 			{//for all l in live
 				//addEdge(l,d)
-                link(&lg, def->head, op->head, temp2node, lg.rank);
+                addEdge(&lg, def->head, op->head, temp2node, lg.spillCost);
             }
         }
-        ////fprintf(stdout,"[liveness][Live_liveness] build2 complete\n");fflush(stdout);
+        //fprintf(stdout,"[liveness][Live_liveness] build2 complete\n");fflush(stdout);
     }
     //fprintf(stdout,"[liveness][Live_liveness] complete\n");fflush(stdout);
 	return lg;

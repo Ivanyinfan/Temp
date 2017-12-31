@@ -232,6 +232,24 @@ Temp_tempList F_registers()
 	return registers;
 }
 
+AS_instrList F_procEntryExit2(AS_instrList body)
+{
+	Temp_temp bak_ebx = Temp_newtemp();
+    Temp_temp bak_esi = Temp_newtemp();
+    Temp_temp bak_edi = Temp_newtemp();
+    AS_instr instr1=AS_Move("movl `s0, `d0", Temp_TempList(bak_ebx, NULL), Temp_TempList(F_ebx(), NULL));
+    AS_instr instr2=AS_Move("movl `s0, `d0", Temp_TempList(bak_esi, NULL), Temp_TempList(F_esi(), NULL));
+    AS_instr instr3=AS_Move("movl `s0, `d0", Temp_TempList(bak_edi, NULL), Temp_TempList(F_edi(), NULL));
+    AS_instrList ret=AS_InstrList(instr1,AS_InstrList(instr2,AS_InstrList(instr3,body)));
+    AS_instr instr4=AS_Move("movl `s0, `d0", Temp_TempList(F_edi(), NULL), Temp_TempList(bak_edi, NULL));
+    AS_instr instr5=AS_Move("movl `s0, `d0", Temp_TempList(F_esi(), NULL), Temp_TempList(bak_esi, NULL));
+    AS_instr instr6=AS_Move("movl `s0, `d0", Temp_TempList(F_ebx(), NULL), Temp_TempList(bak_ebx, NULL));
+    AS_instr instr7=AS_Oper("", NULL, Temp_TempList(F_RV(), Temp_TempList(F_ebx(), Temp_TempList(F_esi(), Temp_TempList(F_edi(), NULL)))), AS_Targets(NULL));
+    AS_instrList after=AS_InstrList(instr4,AS_InstrList(instr5,AS_InstrList(instr6,AS_InstrList(instr7,NULL))));
+    ret=AS_splice(ret,after);
+    return ret;
+}
+
 //函数进出口操作
 AS_proc F_procEntryExit3(F_frame f, AS_instrList body)
 {

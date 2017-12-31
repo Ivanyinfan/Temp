@@ -25,7 +25,7 @@ static G_graph graph;
 static G_table degree;
 static G_table color;
 static G_table alias;
-static G_table rank;
+static G_table spillCost;
 static G_nodeList spillWorklist;
 static G_nodeList simplifyWorklist;
 static G_nodeList spillNodes;
@@ -114,7 +114,6 @@ static void Build(struct Live_graph g)
         }
         G_enter(color, p->head, c);
 
-		//每个点和自己合并 ？
         G_node * a = checked_malloc(sizeof(G_node));
         *a = p->head;
         G_enter(alias, p->head, a);
@@ -123,7 +122,7 @@ static void Build(struct Live_graph g)
 	//初始化
     graph = g.graph;
     adjSet = g.adj;
-    rank = g.rank;
+    spillCost = g.spillCost;
     spillWorklist = NULL;
     simplifyWorklist = NULL;
     freezeWorklist = NULL;
@@ -185,7 +184,6 @@ static void DecrementDegree(G_node m)
     int *c = G_look(color, m);
     int d2 = *d1;
     *d1 = d2 - 1;
-	//为什么要G_inNodeList(m, spillWorklist)？
     if (d2 == K && *c == 0 && G_inNodeList(m, spillWorklist))
 	{
         EnableMoves(G_NodeList(m, Adjacent(m)));
@@ -415,11 +413,11 @@ static void SelectSpill()
 {
 	fprintf(stdout,"[regalloc][SelectSpill] begin\n");fflush(stdout);
     G_node m = spillWorklist->head;
-    int max = *(int *)G_look(rank, m);
-	/* 根据rank的值来选择溢出的点 */
+    int max = *(int *)G_look(spillCost, m);
+	/* 根据spillCost的值来选择溢出的点 */
     for (G_nodeList p = spillWorklist->tail; p; p = p->tail)
 	{
-        int t = *(int *)G_look(rank, p->head);
+        int t = *(int *)G_look(spillCost, p->head);
         if (Live_gtemp(p->head)->spilled)
 		{
             t = 0; /* spilled register has a lower priority to be spilled again */
