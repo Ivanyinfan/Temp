@@ -20,10 +20,9 @@ DIFFOPTION="-w -B"
 score=0
 
 #pwd
-echo "=========================== make =========================="
 make clean >& /dev/null
-make
-echo $?
+make >& /dev/null
+#echo $?
 if [[ $? != 0 ]]; then
 	echo -e "${RED_COLOR}[-_-]$ite: Compile Error${RES}"		
 	make clean >& /dev/null
@@ -33,10 +32,8 @@ fi
 	do		
 		if [ ${tcase##*.} = "tig" ]; then
 			tfileName=${tcase##*/}
-			echo "=========================== compile =========================="
-			./$BIN $TESTCASEDIR/$tfileName
-			echo "=========================== link =========================="
-			gcc -Wl,--wrap,getchar -m32 $TESTCASEDIR/${tfileName}.s runtime.c -o test.out 
+			./$BIN $TESTCASEDIR/$tfileName &>/dev/null
+			gcc -Wl,--wrap,getchar -m32 $TESTCASEDIR/${tfileName}.s runtime.c -o test.out &>/dev/null
 			if [ ! -s test.out ]; then
 				echo -e "${BLUE_COLOR}[*_*]$ite: Link error. [$tfileName]${RES}"
  				rm $TESTCASEDIR/${tfileName}.s 
@@ -50,10 +47,7 @@ fi
 				count=1
 				for mergecase in `ls $MERGECASEDIR` 
 				do
-					echo "=========================== run =========================="
-					echo "$mergecase"
-					./test.out < $MERGECASEDIR/$mergecase > _tmp.txt
-					
+					./test.out < $MERGECASEDIR/$mergecase >& _tmp.txt
 					diff $DIFFOPTION _tmp.txt $MERGEREFDIR/${mergecase%.*}.out >& _ref.txt
 					if [ -s _ref.txt ]; then
 						echo -e "${BLUE_COLOR}[*_*]$ite: Output mismatches. [$tfileName]${RES}"
@@ -69,7 +63,7 @@ fi
 				score=$((score+result+count/2))
 				rm -f test.out $TESTCASEDIR/${tfileName}.s
 			else	
-				./test.out > _tmp.txt
+				./test.out >& _tmp.txt
 				diff $DIFFOPTION _tmp.txt $REFOUTDIR/${tfileName%.*}.out >& _ref.txt
 				if [ -s _ref.txt ]; then
 					echo -e "${BLUE_COLOR}[*_*]$ite: Output mismatches. [$tfileName]${RES}"
