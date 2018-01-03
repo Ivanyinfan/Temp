@@ -13,7 +13,7 @@ module pl_computer (resetn,clock,mem_clock, pc,inst,ealu,malu,walu);
 	wire [31:0] bpc,jpc,npc,pc4,ins, inst;
 	//模块间互联传递数据或控制信息的信号线,均为32位宽信号。IF取指令阶段。
 	
-	wire [31:0] dpc4,da,db,dim;
+	wire [31:0] dpc4,da,db,dimm;
 	//模块间互联传递数据或控制信息的信号线,均为32位宽信号。ID指令译码阶段。
 	
 	wire [31:0] epc4,ea,eb,eimm;

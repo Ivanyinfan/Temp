@@ -1,4 +1,4 @@
-module sc_cu (op, func, z, wmem, wreg, regrt, m2reg, aluc, shift,
+module pipe_cu (op, func, z, wmem, wreg, regrt, m2reg, aluc, shift,
               aluimm, pcsource, jal, sext);
    input  [5:0] op,func;
    input        z;

@@ -1,4 +1,4 @@
-module dff1 (d,clk,clrn,q);
+module dff4 (d,clk,clrn,q);
    input  [3:0] d;
    input  clk,clrn;
    output [3:0] q;
