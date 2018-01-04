@@ -50,7 +50,7 @@ module pl_computer (resetn,clock,mem_clock, pc,inst,ealu,malu,walu);
 	//实验中可采用系统clock的反相信号作为mem_clock（亦即rom_clock）,
 	//即留给信号半个节拍的传输时间。
 	
-	pipeir inst_reg ( pc4,ins,wpcir,clock,resetn,dpc4,inst ); // IF/ID流水线寄存器
+	pipeir inst_reg ( pc4,ins,wpcir,clock,resetn,dpc4,inst,dbubble); // IF/ID流水线寄存器
 	//IF/ID流水线寄存器模块，起承接IF阶段和ID阶段的流水任务。
 	//在clock上升沿时，将IF阶段需传递给ID阶段的信息，锁存在IF/ID流水线寄存器
 	//中，并呈现在ID阶段。
@@ -58,7 +58,7 @@ module pl_computer (resetn,clock,mem_clock, pc,inst,ealu,malu,walu);
 	pipeid id_stage ( mwreg,mrn,ern,ewreg,em2reg,mm2reg,dpc4,inst,
 	wrn,wdi,ealu,malu,mmo,wwreg,clock,resetn,
 	bpc,jpc,pcsource,wpcir,dwreg,dm2reg,dwmem,daluc,
-	daluimm,da,db,dimm,drn,dshift,djal ); // ID stage
+	daluimm,da,db,dimm,drn,dshift,djal,dbubble); // ID stage
 	//ID指令译码模块。注意其中包含控制器CU、寄存器堆、及多个多路器等。
 	//其中的寄存器堆，会在系统clock的下沿进行寄存器写入，也就是给信号从WB阶段
 	//传输过来留有半个clock的延迟时间，亦即确保信号稳定。

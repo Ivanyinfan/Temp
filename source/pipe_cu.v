@@ -1,8 +1,8 @@
 module pipe_cu (op, func, z, wmem, wreg, regrt, m2reg, aluc, shift,
-              aluimm, pcsource, jal, sext);
+              aluimm, pcsource, jal, sext,bubble);
    input  [5:0] op,func;
    input        z;
-   output       wreg,regrt,jal,m2reg,shift,aluimm,sext,wmem;
+   output       wreg,regrt,jal,m2reg,shift,aluimm,sext,wmem,bubble;
    output [3:0] aluc;
    output [1:0] pcsource;
    wire r_type = ~|op;
@@ -38,9 +38,7 @@ module pipe_cu (op, func, z, wmem, wreg, regrt, m2reg, aluc, shift,
    
   
    assign pcsource[1] = i_jr | i_j | i_jal;
-   //assign pcsource[0] = ( i_beq & z ) | (i_bne & ~z) | i_j | i_jal ;
-   assign pcsource[0] = i_j | i_jal ;
-   
+   assign pcsource[0] = ( i_beq & z ) | (i_bne & ~z) | i_j | i_jal ;
    assign wreg = i_add | i_sub | i_and | i_or   | i_xor  |
                  i_sll | i_srl | i_sra | i_addi | i_andi |
                  i_ori | i_xori | i_lw | i_lui  | i_jal;
@@ -59,5 +57,6 @@ module pipe_cu (op, func, z, wmem, wreg, regrt, m2reg, aluc, shift,
    assign m2reg   = i_lw;
    assign regrt   = i_addi | i_andi | i_ori | i_xori | i_lw | i_sw | i_lui;
    assign jal     = i_jal;
+   assign bubble  = i_j|i_jal|i_jr|i_beq|i_bne;
 
 endmodule

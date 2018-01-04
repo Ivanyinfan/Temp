@@ -15,5 +15,5 @@ module pipeexe ( ealuc,ealuimm,ea,eb,eimm,eshift,ern0,epc4,ejal,ern,ealu ); // E
 	alu al_unit (alua,alub,ealuc,alu,zero);
 	wire [31:0] epc44=epc4+32'h4;
 	mux2x32 alu_ealu (alu,epc44,ejal,ealu);
-	mux2x5 select_ern(ern0,5'h31,ejal,ern);
+	mux2x5 select_ern(ern0,5'd31,ejal,ern);
 endmodule

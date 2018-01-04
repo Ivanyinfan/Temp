@@ -1,7 +1,7 @@
 module pipeid ( mwreg,mrn,ern,ewreg,em2reg,mm2reg,dpc4,inst,
 	wrn,wdi,ealu,malu,mmo,wwreg,clock,resetn,
 	bpc,jpc,pcsource,wpcir,dwreg,dm2reg,dwmem,daluc,
-	daluimm,da,db,dimm,drn,dshift,djal ); // ID stage
+	daluimm,da,db,dimm,drn,dshift,djal,dbubble); // ID stage
 	//ID指令译码模块。注意其中包含控制器CU、寄存器堆、及多个多路器等。
 	//其中的寄存器堆，会在系统clock的下沿进行寄存器写入
 	//给信号从WB阶段传输过来留有半个clock的延迟时间，亦即确保信号稳定。
@@ -26,26 +26,13 @@ module pipeid ( mwreg,mrn,ern,ewreg,em2reg,mm2reg,dpc4,inst,
 	output [4:0] drn;
 	output [3:0] daluc;
 	output [1:0] pcsource;
-	output wpcir,dwreg,dm2reg,dwmem,daluimm,dshift,djal;
+	output wpcir,dwreg,dm2reg,dwmem,daluimm,dshift,djal,dbubble;
 	
 	wire [31:0]  sa = { 27'b0, inst[10:6] }; // extend to 32 bits from sa for shift instruction
 	
 	wire rsrtequ; //条件变量，即da,db是不是相等
 	
-	wire regrt,sext;
-	wire [31:0] jpc = {dpc4[31:28],inst[25:0],1'b0,1'b0}; // j address
-	pipe_cu cu(inst[31:26],inst[5:0],rsrtequ,dwmem,dwreg,regrt,dm2reg,
-                        daluc,dshift,daluimm,pcsource,djal,sext);
-	wire          e = sext & inst[15];          // positive or negative sign at sext signal
-	wire [15:0]   imme = {16{e}};                // high 16 sign bit
-	wire [31:0] imm = {imme,inst[15:0]}; // sign extend to high 16
-	mux2x32 select_dimm(imm,sa,dshift,dimm);
-	mux2x5 reg_wn (inst[15:11],inst[20:16],regrt,drn);//确定写回寄存器的地址
-	
-	wire [31:0] offset = {imm[13:0],inst[15:0],1'b0,1'b0};
-	assign bpc = dpc4 + offset;
-	
-	//qa,qb是读出来的值，wn是写的地址，we是要不要写，d是要写的值
+	//读地址1，读地址2，写的数据，写的地址，是否写，时钟，重置，读出的值1，读出的值2
 	wire [31:0] qa,qb;
 	regfile rf(inst[25:21],inst[20:16],wdi,wrn,wwreg,clock,resetn,qa,qb);
 	
@@ -58,8 +45,22 @@ module pipeid ( mwreg,mrn,ern,ewreg,em2reg,mm2reg,dpc4,inst,
 	mux4x32 select_da(qa,ealu,malu,mmo,da_source,da);
 	mux4x32 select_db(qb,ealu,malu,mmo,db_source,db);
 	
-	assign rsrtequ=(qa==qb);
+	assign rsrtequ=(da==db);
 	
-	//em2reg暂停一个周期
-	assign wpcir=em2reg;
+	wire regrt,sext,bubble;
+	wire [31:0] jpc = {dpc4[31:28],inst[25:0],1'b0,1'b0}; // j address
+	pipe_cu cu(inst[31:26],inst[5:0],rsrtequ,dwmem,dwreg,regrt,dm2reg,
+                        daluc,dshift,daluimm,pcsource,djal,sext,dbubble);
+	wire          e = sext & inst[15];          // positive or negative sign at sext signal
+	wire [15:0]   imme = {16{e}};                // high 16 sign bit
+	wire [31:0] imm = {imme,inst[15:0]}; // sign extend to high 16
+	mux2x32 select_dimm(imm,sa,dshift,dimm);
+	mux2x5 reg_wn (inst[15:11],inst[20:16],regrt,drn);//确定写回寄存器的地址
+	
+	wire [31:0] offset = {imm[13:0],inst[15:0],1'b0,1'b0};
+	assign bpc = dpc4 + offset;
+	
+	//em2reg暂停一个周期或者跳转
+	assign wpcir = em2reg;
+	
 endmodule

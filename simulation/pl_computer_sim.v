@@ -13,8 +13,8 @@
 
 
 // `timescale 10ns/10ns            // 仿真时间单位/时间精度
-//`timescale 1ps/1ps            // 仿真时间单位/时间精度
-`timescale 1s/1s            // 仿真时间单位/时间精度
+`timescale 1ps/1ps            // 仿真时间单位/时间精度
+//`timescale 1s/1s            // 仿真时间单位/时间精度
 
 //
 // （1）仿真时间单位/时间精度：数字必须为1、10、100
@@ -32,7 +32,8 @@ module pl_computer_sim;
     //wire   [6:0]  hex0_sim,hex1_sim,hex2_sim,hex3_sim,hex4_sim,hex5_sim;
 	//wire          led0_sim,led1_sim,led2_sim,led3_sim;      
 	 
-	wire   [31:0]  pc_sim,inst_sim,aluout_sim,memout_sim;
+	wire   [31:0]  pc_sim,inst_sim;
+	//aluout_sim,memout_sim;
     //wire   [31:0]  out_port0_sim,out_port1_sim;
     wire   [31:0]  ealu,malu,walu;
    
@@ -61,7 +62,7 @@ module pl_computer_sim;
 	initial
         begin
             resetn_sim = 0;            // 低电平持续10个时间单位，后一直为1。
-                #5 resetn_sim = 1;
+                #1 resetn_sim = 1;
         end
 	 
 	/*initial
