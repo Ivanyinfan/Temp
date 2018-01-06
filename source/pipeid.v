@@ -57,7 +57,7 @@ module pipeid ( mwreg,mrn,ern,ewreg,em2reg,mm2reg,dpc4,inst,
 	mux2x32 select_dimm(imm,sa,dshift,dimm);
 	mux2x5 reg_wn (inst[15:11],inst[20:16],regrt,drn);//确定写回寄存器的地址
 	
-	wire [31:0] offset = {imm[13:0],inst[15:0],1'b0,1'b0};
+	wire [31:0] offset = {imme[13:0],inst[15:0],1'b0,1'b0};
 	assign bpc = dpc4 + offset;
 	
 	//em2reg暂停一个周期或者跳转
