@@ -40,6 +40,71 @@ static Live_moveList worklistMoves;   //有可能合并的传送指令集合
 static Live_moveList activeMoves;     //还未做好合并准备的传送指令集合
 
 static int times;
+
+static AS_instrList deleteSameInst(AS_instrList il,G_table temp2node)
+{
+	fprintf(stdout,"[regalloc][deleteSameInst] begin\n");fflush(stdout);
+	AS_instrList ret=il;
+	AS_instrList last=NULL;
+	for(;il;il=il->tail)
+	{
+		AS_instr i=il->head;
+		fprintf(stdout,"[regalloc][deleteSameInst] inst %d:\n",i->key,AssemInst(i));printASInstr(stdout,i);fflush(stdout);
+		bool flag=TRUE;
+		if(i->kind==I_MOVE)
+		{
+			Temp_tempList dst=i->u.MOVE.dst;
+			Temp_tempList src=i->u.MOVE.src;
+			fprintf(stdout,"[regalloc][deleteSameInst] dst=");printTempList(stdout,dst);fflush(stdout);
+			fprintf(stdout,"[regalloc][deleteSameInst] src=");printTempList(stdout,src);fflush(stdout);
+			for(;dst;dst=dst->tail)
+			{
+				if(!src)
+				{
+					fprintf(stdout,"[regalloc][deleteSameInst] !src\n");fflush(stdout);
+					flag=FALSE;
+					break;
+				}
+				if(dst->head==F_FP()||src->head==F_FP())
+				{
+					flag=FALSE;
+					break;
+				}
+				G_node dstn=TAB_look(temp2node,dst->head);
+				G_node srcn=TAB_look(temp2node,src->head);
+				int *c1=G_look(color,dstn);
+				int *c2=G_look(color,srcn);
+				fprintf(stdout,"[regalloc][deleteSameInst] c1=%d,c2=%d\n",*c1,*c2);fflush(stdout);
+				if(*c1!=*c2)
+				{
+					flag=FALSE;
+					break;
+				}
+				src=src->tail;
+			}
+		}
+		else
+			flag=FALSE;
+		fprintf(stdout,"[regalloc][deleteSameInst] flag=%d\n",flag);fflush(stdout);
+		if(flag)
+		{
+			if(last)
+			{
+				//fprintf(stdout,"[regalloc][deleteSameInst] last->head %d:\n",last->head->key,AssemInst(i));printASInstr(stdout,i);fflush(stdout);
+				last->tail=il->tail;
+			}
+			else
+			{
+				ret=ret->tail;
+			}
+		}
+		else
+			last=il;
+	}
+	fprintf(stdout,"[regalloc][deleteSameInst] complete\n");fflush(stdout);
+	return ret;
+}
+
 struct RA_result RA_regAlloc(F_frame f, AS_instrList il) {
 	//your code here
 	//fprintf(stdout,"[regalloc][RA_regAllocp] begin\n");fflush(stdout);
@@ -71,7 +136,8 @@ struct RA_result RA_regAlloc(F_frame f, AS_instrList il) {
             done = TRUE;
     }
 
-    ret.il = il;
+    ret.il = deleteSameInst(il,live_graph.temp2node);
+	//ret.il = il;
 	ret.coloring = generate_map();
 	//fprintf(stdout,"[regalloc][RA_regAllocp] complete\n");fflush(stdout);
 	return ret;

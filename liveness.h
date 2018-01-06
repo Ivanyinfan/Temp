@@ -14,6 +14,7 @@ struct Live_graph {
 	Live_moveList moves;
 	G_table spillCost;
 	bool *adj;
+	G_table temp2node;
 };
 
 Temp_temp Live_gtemp(G_node n);

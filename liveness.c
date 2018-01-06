@@ -176,5 +176,6 @@ struct Live_graph Live_liveness(G_graph flow,int times) {
             }
         }
     }
+	lg.temp2node=temp2node;
 	return lg;
 }
