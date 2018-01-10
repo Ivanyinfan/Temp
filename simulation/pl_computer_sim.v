@@ -28,18 +28,14 @@ module pl_computer_sim;
 	reg        resetn_sim;
     reg        clock_50M_sim;
 	reg        mem_clock_sim;
-
-    //wire   [6:0]  hex0_sim,hex1_sim,hex2_sim,hex3_sim,hex4_sim,hex5_sim;
-	//wire          led0_sim,led1_sim,led2_sim,led3_sim;      
-	 
-	wire   [31:0]  pc_sim,inst_sim;
-	//aluout_sim,memout_sim;
-    //wire   [31:0]  out_port0_sim,out_port1_sim;
-    wire   [31:0]  ealu,malu,walu;
-   
-    wire           wmem_sim;   // connect the cpu and dmem. 
 	
-	pl_computer pl_computer_instance (resetn_sim,clock_50M_sim,mem_clock_sim, pc_sim,inst_sim,ealu,malu,walu);
+	wire set0,set1,set2,set3;
+	wire led0,led1,led2,led3,led4,led5,led6,led7,led8,led9;
+	wire [6:0] hex0,hex1,hex2,hex3,hex4,hex5;
+	pl_computer pl_computer_instance (resetn_sim,clock_50M_sim,mem_clock_sim,
+										set0,set1,set2,set3,
+										led0,led1,led2,led3,led4,led5,led6,led7,led8,led9,
+										hex0,hex1,hex2,hex3,hex4,hex5);
 					
 	initial
         begin
@@ -61,20 +57,10 @@ module pl_computer_sim;
 		  
 	initial
         begin
-            resetn_sim = 0;            // 低电平持续10个时间单位，后一直为1。
+            resetn_sim = 0;
                 #1 resetn_sim = 1;
         end
-	 
-	/*initial
-	    begin
-		      in_port0_sim = 0;
-				in_port1_sim = 0;
-		 end*/
-
-
-
-	 
-	 	  
+  
 		  
     initial
         begin

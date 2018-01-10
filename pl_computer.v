@@ -1,4 +1,7 @@
-module pl_computer (resetn,clock,mem_clock, pc,inst,ealu,malu,walu);
+module pl_computer (resetn,clock,mem_clock,
+					set0,set1,set2,set3,
+					led0,led1,led2,led3,led4,led5,led6,led7,led8,led9,
+					hex0,hex1,hex2,hex3,hex4,hex5);
 //定义顶层模块pipelined_computer，作为工程文件的顶层入口，如图1-1建立工程时指定。
 
 	input resetn, clock, mem_clock;
@@ -7,10 +10,19 @@ module pl_computer (resetn,clock,mem_clock, pc,inst,ealu,malu,walu);
 	//数据同步RAM使用，其波形需要有别于实验一。
 	//这些信号可以用作仿真验证时的输出观察信号。
 	
-	output [31:0] pc,inst,ealu,malu,walu;
+	input set0,set1,set2,set3;
+	output led0,led1,led2,led3,led4,led5,led6,led7,led8,led9;
+	output [6:0] hex0,hex1,hex2,hex3,hex4,hex5;
+	
+	reg led0,led1,led2,led3,led4,led5,led6,led7,led8,led9;
+	wire [6:0] hex0,hex1,hex2,hex3,hex4,hex5;
+	wire [31:0] in_port0,in_port1;
+	wire [31:0] out_port0,out_port1,out_port2;
+	
+	wire [31:0] pc,inst,ealu,malu,walu;
 	//模块用于仿真输出的观察信号。缺省为wire型。
 	
-	wire [31:0] bpc,jpc,npc,pc4,ins, inst;
+	wire [31:0] bpc,jpc,npc,pc4,ins;
 	//模块间互联传递数据或控制信息的信号线,均为32位宽信号。IF取指令阶段。
 	
 	wire [31:0] dpc4,da,db,dimm;
@@ -31,7 +43,7 @@ module pl_computer (resetn,clock,mem_clock, pc,inst,ealu,malu,walu);
 	//ID阶段向EXE阶段通过流水线寄存器传递的aluc控制信号，4bit。
 	wire [1:0] pcsource;
 	//CU模块向IF阶段模块传递的PC选择信号，2bit。
-	wire wpcir;
+	wire wpcir,dbubble,ebubble;
 	// CU模块发出的控制流水线停顿的控制信号，使PC和IF/ID流水线寄存器保持不变。
 	wire dwreg,dm2reg,dwmem,daluimm,dshift,djal; // id stage
 	// ID阶段产生，需往后续流水级传播的信号。
@@ -66,7 +78,7 @@ module pl_computer (resetn,clock,mem_clock, pc,inst,ealu,malu,walu);
 	
 	pipedereg de_reg ( dwreg,dm2reg,dwmem,daluc,daluimm,da,db,dimm,drn,dshift,
 	djal,dpc4,clock,resetn,ewreg,em2reg,ewmem,ealuc,ealuimm,
-	ea,eb,eimm,ern0,eshift,ejal,epc4 ); // ID/EXE流水线寄存器
+	ea,eb,eimm,ern0,eshift,ejal,epc4,wpcir); // ID/EXE流水线寄存器
 	//ID/EXE流水线寄存器模块，起承接ID阶段和EXE阶段的流水任务。
 	//在clock上升沿时，将ID阶段需传递给EXE阶段的信息，锁存在ID/EXE流水线
 	//寄存器中，并呈现在EXE阶段。
@@ -80,7 +92,7 @@ module pl_computer (resetn,clock,mem_clock, pc,inst,ealu,malu,walu);
 	//在clock上升沿时，将EXE阶段需传递给MEM阶段的信息，锁存在EXE/MEM
 	//流水线寄存器中，并呈现在MEM阶段。
 	
-	pipemem mem_stage ( mwmem,malu,mb,clock,mem_clock,mmo ); // MEM stage
+	pipemem mem_stage ( mwmem,malu,mb,clock,mem_clock,mmo,in_port0,in_port1,out_port0,out_port1,out_port2); // MEM stage
 	//MEM数据存取模块。其中包含对数据同步RAM的读写访问。// 注意mem_clock。
 	//输入给该同步RAM的mem_clock信号，模块内定义为ram_clk。
 	//实验中可采用系统clock的反相信号作为mem_clock信号（亦即ram_clk）,
@@ -97,4 +109,19 @@ module pl_computer (resetn,clock,mem_clock, pc,inst,ealu,malu,walu);
 	//包含一个多路器，所以可以仅用一个多路器的实例即可实现该部分。
 	//当然，如果专门写一个完整的模块也是很好的。
 	
+	always@(negedge set0)begin led0<=~led0;end
+	always@(negedge set1)begin led1<=~led1;end
+	always@(negedge set2)begin led5<=~led5;end
+	always@(negedge set3)begin led6<=~led6;end
+	GetLed getLed0(led0,led1,led2,led3,led4,in_port0);
+	GetLed getLed1(led5,led6,led7,led8,led9,in_port1);
+	io_out toScreen0(out_port0,hex1,hex0);
+	io_out toScreen1(out_port1,hex3,hex2);
+	io_out toScreen2(out_port2,hex5,hex4);
+	
+	initial
+	begin 
+		led0=0;led1=0;led2=0;led3=0;led4=0;
+		led5=0;led6=0;led7=0;led8=0;led9=0;
+	end
 endmodule

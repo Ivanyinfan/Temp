@@ -61,6 +61,6 @@ module pipeid ( mwreg,mrn,ern,ewreg,em2reg,mm2reg,dpc4,inst,
 	assign bpc = dpc4 + offset;
 	
 	//em2reg暂停一个周期或者跳转
-	assign wpcir = em2reg;
+	assign wpcir = em2reg&(ern==inst[25:21]||ern==inst[20:16]);
 	
 endmodule
