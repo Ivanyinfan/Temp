@@ -34,7 +34,7 @@ module pipeid ( mwreg,mrn,ern,ewreg,em2reg,mm2reg,dpc4,inst,
 	
 	//读地址1，读地址2，写的数据，写的地址，是否写，时钟，重置，读出的值1，读出的值2
 	wire [31:0] qa,qb;
-	regfile rf(inst[25:21],inst[20:16],wdi,wrn,wwreg,clock,resetn,qa,qb);
+	regfile rf(inst[25:21],inst[20:16],wdi,wrn,wwreg,~clock,resetn,qa,qb);
 	
 	//da,db的选择
 	wire [1:0] da_source,db_source;

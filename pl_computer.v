@@ -121,7 +121,7 @@ module pl_computer (resetn,clock,mem_clock,
 	
 	initial
 	begin 
-		led0=0;led1=0;led2=0;led3=0;led4=0;
-		led5=0;led6=0;led7=0;led8=0;led9=0;
+		led0=0;led1=1;led2=0;led3=0;led4=0;
+		led5=1;led6=0;led7=0;led8=0;led9=0;
 	end
 endmodule
