@@ -1,0 +1,37 @@
+DEPTH = 64; % Memory depth and width are required %
+WIDTH = 32; % Enter a decimal number %
+ADDRESS_RADIX = HEX; % Address and value radixes are optional %
+DATA_RADIX = HEX; % Enter BIN, DEC, HEX, or OCT; unless %
+% otherwise specified, radixes = HEX %
+CONTENT
+BEGIN
+0  : 20010050; % (00) main: addi $1, $0, 01010000b # address 50h %
+1  : 20020080; % (04) addi $2, $0, 10000000b # address 80h input1 %
+2  : 20030084; % (08) addi $3, $0, 10000100b # address 84h input2 %
+
+3  : 20040080; % (0c) addi $4, $0, 10000000b # address 80h output1 %
+4  : 20050084; % (10) addi $5, $0, 10000100b # address 84h output2 %
+5  : 20060088; % (14) addi $6, $0, 10001000b # address 88h output3 %
+
+6  : 20070055; % (18) addi $7, $0, 01010101b # data 55h %
+
+7  : 200a0000; % (1c) loop: addi $10,$0, 0 # r10 = 0 %
+8  : 200b0000; % (20) addi $11,$0, 0 # r11 = 0 %
+
+9  : 8c2c0000; % (24) lw $12,0($1) # load data[50h] %
+A  : ac2c0000; % (28) sw $12, 0($1) # store data[50h] to [50] %
+
+B  : 8c4a0000; % (2c) lw $10,0($2) # input data from [80h] %
+C  : 8c6b0000; % (30) lw $11,0($3) # input data from [84h] %
+
+D  : ac8a0000; % (34) sw $10, 0($4) # output input1 to [80h] %
+E  : acab0000; % (38) sw $11, 0($5) # output input2 to [84h] %
+F  : 014b6020; % (3c) add $12, $10, $11 # add input1 and input2 %
+10 : accc0000; % (40) sw $12, 0($6) # output to 88h %
+
+
+11 : 214a0000; % (44) addi $10,$10,0 # just check $10 %
+12 : 216b0000; % (48) addi $11,$11,0 # just check $11 %
+
+13 : 08000007; % (4c) j loop # loop %
+END ;

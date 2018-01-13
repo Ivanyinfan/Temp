@@ -12,7 +12,7 @@ module io_output_reg (addr,datain,write_io_enable,io_clk,clrn,out_port0,out_port
 		if (clrn == 0)
 			begin // reset
 				out_port0 <=0;
-				out_port1 <=0; // reset all the output port to 0.
+				//out_port1 <=0; // reset all the output port to 0.
 			end
 		else
 			begin

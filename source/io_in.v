@@ -1,3 +1,13 @@
+module SetLed(set,led);
+	input set;
+	output led;
+	reg led;
+	always@(negedge set)
+	begin
+		led=~led;
+	end
+endmodule
+
 module GetLed(led0,led1,led2,led3,led4,data);
 	input led0,led1,led2,led3,led4;
 	output [31:0] data;

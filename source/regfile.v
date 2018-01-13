@@ -1,6 +1,4 @@
 module regfile (rna,rnb,d,wn,we,clk,clrn,qa,qb);
-//rna第一个寄存器
-//rnb第二个寄存器
    input [4:0] rna,rnb,wn;
    input [31:0] d;
    input we,clk,clrn;

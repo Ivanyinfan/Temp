@@ -3,8 +3,8 @@ module io_input_reg (addr,io_clk,io_read_data,in_port0,in_port1);
 	input 			io_clk;
 	input 	[31:0] 	in_port0,in_port1;
 	output 	[31:0] 	io_read_data;
-	reg 	[31:0] 	in_reg0; // input port0
-	reg 	[31:0] 	in_reg1; // input port1
+	reg [31:0] 	in_reg0; // input port0
+	reg [31:0] 	in_reg1; // input port1
 	io_input_mux 	io_imput_mux2x32(in_reg0,in_reg1,addr[7:2],io_read_data);
 	always @(posedge io_clk)
 	begin
@@ -21,8 +21,8 @@ module io_input_mux(a0,a1,sel_addr,y);
 	reg 	[31:0] 	y;
 	always @ *
 		case (sel_addr)
-			6'b100000: y = a0;
-			6'b100001: y = a1;
+			6'b100000: y = a0;//80h
+			6'b100001: y = a1;//84h
 			// more ports，可根据需要设计更多的端口。
 		endcase
 endmodule
