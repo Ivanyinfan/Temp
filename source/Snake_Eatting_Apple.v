@@ -1,4 +1,3 @@
-//苹果产生控制模块
 module Snake_Eatting_Apple
 (
 	input CLK_50M,
@@ -18,8 +17,7 @@ module Snake_Eatting_Apple
 	reg [10:0]random_num;
 	
 	always@(posedge CLK_50M)
-		random_num<=random_num+927;  //用加法产生随机数  
-		//随机数高5位为苹果X坐标 低5位为苹果Y坐标
+		random_num<=random_num+11'h927;
 	
 	always@(posedge CLK_50M or negedge RSTn)
 		begin
@@ -44,7 +42,7 @@ module Snake_Eatting_Apple
 									add_cube<=1;
 									apple_x<=(random_num[10:5]>38)?(random_num[10:5]-25):(random_num[10:5]==0)?1:random_num[10:5];
 									apple_y<=(random_num[4:0]>28)?(random_num[4:0]-3):(random_num[4:0]==0)?1:random_num[4:0];
-								end   //判断随机数是否超出频幕坐标范围 将随机数转换为下个苹果的X Y坐标
+								end
 							else
 									add_cube<=0;
 	
@@ -55,7 +53,10 @@ module Snake_Eatting_Apple
 			
 			
 	
-	
+	initial
+	begin
+		add_cube<=0;
+	end
 	
 	
 /***************************************************************************/

@@ -1,4 +1,3 @@
-//����ģ��
 module top_snake
 (
 	input CLK,
@@ -13,8 +12,8 @@ module top_snake
 	output vsync,
 	output clk_25M,
 	output [2:0]color_out,
-	output [6:0]seg_out,
-	output [3:0]sel
+	output [6:0]HEX0,
+	output [6:0]HEX1
 	
 );
 
@@ -144,15 +143,7 @@ module top_snake
 	
 /***************************************************************************/
 /***************************************************************************/
-	Seg_Display U7
-	(
-		.CLK_50M(CLK),
-		.RSTn(RSTn),	
-		.add_cube(add_cube),
-		.seg_out(seg_out),
-		.sel(sel)
-	
-	);
+	Seg_Display U7(CLK,RSTn,add_cube,HEX1,HEX0);
 	
 	
 	

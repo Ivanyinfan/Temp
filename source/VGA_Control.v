@@ -67,24 +67,24 @@ module VGA_Control
 					begin
 					
 						hsync<=0;
-						clk_cnt<=clk_cnt+1;
+						clk_cnt<=clk_cnt+20'h1;
 						
 					end
 				else if(clk_cnt==96)
 					begin
 						hsync<=1;
-						clk_cnt<=clk_cnt+1;
+						clk_cnt<=clk_cnt+20'h1;
 						
 						
 					end
 				else if(clk_cnt==799)
 					begin
 						clk_cnt<=0;
-						line_cnt<=line_cnt+1;
+						line_cnt<=line_cnt+10'h1;
 				
 						
 					end
-				else clk_cnt<=clk_cnt+1;
+				else clk_cnt<=clk_cnt+20'h1;
 				
 				
 				if(line_cnt==0)
