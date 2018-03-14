@@ -20,6 +20,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <algorithm>
 #include <list>
 
 #include "rdt_struct.h"
@@ -80,17 +81,6 @@ void Sender_FromUpperLayer(struct message *msg)
 	cout<<"[rdt_sender][Sender_FromUpperLayer]times="<<times++<<endl;
 	cout<<"[rdt_sender][Sender_FromUpperLayer]msg->size="<<msg->size<<endl;
 	//cout<<"[rdt_sender][Sender_FromUpperLayer]msg->data="<<msg->data<<endl;
-    /* 1-byte header indicating the size of the payload 
-    int header_size = 1;
-
-	/* 2-byte tail indicating the checksum 
-	int checksum_size=2;
-	
-	/* 1-byte header indicating the sequence 
-	int seq_size=1;
-	
-    /* maximum payload size 
-    int maxpayload_size = RDT_PKTSIZE - header_size - seq_size - checksum_size;*/
 
     /* split the message if it is too big */
 
@@ -103,7 +93,7 @@ void Sender_FromUpperLayer(struct message *msg)
 	current_cursor=last_cursor=0;
 	messagee=msg;
 	
-    while (msg->size-last_cursor > maxpayload_size&&window.size()<WIN_SIZE)
+    while (msg->size-last_cursor > maxpayload_size)
 	{
 		cout<<"[rdt_sender][Sender_FromUpperLayer]last_cursor="<<last_cursor<<endl;
 		cout<<"[rdt_sender][Sender_FromUpperLayer]maxpayload_size="<<maxpayload_size<<endl;
@@ -120,7 +110,7 @@ void Sender_FromUpperLayer(struct message *msg)
 		cout<<"[rdt_sender][Sender_FromUpperLayer]new pkt->size="<<(int)pkt.data[0]<<endl;
 		cout<<"[rdt_sender][Sender_FromUpperLayer]new pkt->seq="<<(int)pkt.data[1]<<endl;
 		/* send it out through the lower layer */
-		Sender_ToLowerLayer(&pkt);
+		//Sender_ToLowerLayer(&pkt);
 
 		window.push_back(pkt);
 	
@@ -128,27 +118,17 @@ void Sender_FromUpperLayer(struct message *msg)
 		last_cursor += maxpayload_size;
     }
 
-	if(window.size()<WIN_SIZE)
+	/* send out the last packet */
+	if (msg->size > last_cursor)
 	{
-		/* send out the last packet */
-		if (msg->size > last_cursor)
-		{
-			/* fill in the packet 
-			pkt.data[0] = msg->size-last_cursor;
-			pkt.data[1]=current_seq++;
-			current_seq%=SEQ_MAX;
-			memcpy(pkt.data+header_size+seq_size, msg->data+last_cursor, msg->size-last_cursor);
-			short checksum=addChecksum(&pkt);
-			pkt.data[RDT_PKTSIZE-2]=(char)checksum>>8;
-			pkt.data[RDT_PKTSIZE-1]=(char)checksum;*/
-			fillPacket(msg->size-last_cursor,&pkt);
-
-			/* send it out through the lower layer */
-			Sender_ToLowerLayer(&pkt);
+		fillPacket(msg->size-last_cursor,&pkt);
 			
-			window.push_back(pkt);
-		}
+		window.push_back(pkt);
     }
+	
+	list<packet>::iterator it;int j;
+	for(j=0,it=window.begin();it!=window.end()&&j<WIN_SIZE;++it,++j)
+		Sender_ToLowerLayer(&(*it));
 }
 
 /* event handler, called when a packet is passed from the lower layer at the 
@@ -162,39 +142,6 @@ void Sender_FromLowerLayer(struct packet *pkt)
 	{
 		Sender_StopTimer();
 		window.pop_front();
-		int left=messagee->size-last_cursor;
-		cout<<"[rdt_sender][Sender_FromLowerLayer]msg->size="<<messagee->size<<",cursor="<<last_cursor<<",left="<<left<<endl;
-		if(left>maxpayload_size)
-		{
-			packet packett;
-			packett.data[0]=maxpayload_size;
-			packett.data[1]=current_seq++;
-			current_seq%=SEQ_MAX;
-			memcpy(packett.data+header_size+seq_size, messagee->data+last_cursor, maxpayload_size);
-			cout<<"[rdt_sender][Sender_FromLowerLayer]memcpy complete"<<endl;
-			short checksum=addChecksum(&packett);
-			packett.data[RDT_PKTSIZE-2]=(char)checksum>>8;
-			packett.data[RDT_PKTSIZE-1]=(char)checksum;
-			Sender_ToLowerLayer(&packett);
-			window.push_back(packett);
-			last_cursor+=maxpayload_size;
-			//Sender_StartTimer(0.3);
-		}
-		else if(left>0)
-		{
-			packet packett;
-			packett.data[0] = messagee->size-last_cursor;
-			packett.data[1]=current_seq++;
-			current_seq%=SEQ_MAX;
-			memcpy(packett.data+header_size+seq_size, messagee->data+last_cursor, messagee->size-last_cursor);
-			short checksum=addChecksum(&packett);
-			packett.data[RDT_PKTSIZE-2]=(char)(checksum>>8);
-			packett.data[RDT_PKTSIZE-1]=(char)checksum;
-			Sender_ToLowerLayer(&packett);
-			window.push_back(packett);
-			last_cursor=messagee->size;
-			//Sender_StartTimer(0.3);
-		}
 	}
 	cout<<"[rdt_sender][Sender_FromLowerLayer]end"<<endl;
 }

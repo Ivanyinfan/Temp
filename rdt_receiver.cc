@@ -19,16 +19,21 @@
 #include <string.h>
 
 #include <iostream>
+#include <list>
 
 #include "rdt_struct.h"
 #include "rdt_receiver.h"
 
+#define WIN_SIZE 10
+#define SEQ_MAX 30
 #define header_size 2
 
 using namespace std;
 
 static int expected_seq;
+static list<packet *> buffer;
 static bool checkPacket(packet *pkt);
+static bool isLater(int a,int b);
 
 /* receiver initialization, called once at the very beginning */
 void Receiver_Init()
@@ -53,10 +58,11 @@ void Receiver_FromLowerLayer(struct packet *pkt)
     /* 1-byte header indicating the size of the payload 
     int header_size = 1;*/
 
-	std::cout<<"[rdt_receiver][Receiver_FromLowerLayer]pkt->size="<<(int)pkt->data[0]<<std::endl;
-	std::cout<<"[rdt_receiver][Receiver_FromLowerLayer]pkt->seq="<<(int)pkt->data[1]<<std::endl;
-	if(checkPacket(pkt)&&pkt->data[1]==expected_seq)
+	if(checkPacket(pkt))
 	{
+		std::cout<<"[rdt_receiver][Receiver_FromLowerLayer]pkt->size="<<(int)pkt->data[0]<<std::endl;
+		std::cout<<"[rdt_receiver][Receiver_FromLowerLayer]pkt->seq="<<(int)pkt->data[1]<<std::endl;
+		std::cout<<"[rdt_receiver][Receiver_FromLowerLayer]expected_seq="<<expected_seq<<std::endl;
 		if(pkt->data[1]==expected_seq)
 		{
 			/* construct a message and deliver to the upper layer */
@@ -74,20 +80,43 @@ void Receiver_FromLowerLayer(struct packet *pkt)
 			memcpy(msg->data, pkt->data+header_size, msg->size);
 			Receiver_ToUpperLayer(msg);
 
-			/* don't forget to free the space */
-			if (msg->data!=NULL) free(msg->data);
-			if (msg!=NULL) free(msg);
-		
 			packet packett;
 			packett.data[0]=expected_seq;
 			expected_seq=(expected_seq+1)%30;
 			Receiver_ToLowerLayer(&packett);
+			if (msg->data!=NULL) free(msg->data);
+			
+			for(list<packet *>::iterator it=buffer.begin();it!=buffer.end();++it)
+			{
+				if((*it)->data[1]==expected_seq)
+				{
+					std::cout<<"[rdt_receiver][Receiver_FromLowerLayer]find for buffer seq="<<(int)(*it)->data[1]<<std::endl;
+					msg->size=(*it)->data[0];
+					msg->data = (char*) malloc(msg->size);
+					memcpy(msg->data, (*it)->data+header_size, msg->size);
+					Receiver_ToUpperLayer(msg);
+					packett.data[0]=expected_seq;
+					expected_seq=(expected_seq+1)%30;
+					Receiver_ToLowerLayer(&packett);
+					buffer.erase(it);
+					--it;
+					if (msg->data!=NULL) free(msg->data);
+				}
+			}
+			
+			/* don't forget to free the space */
+			//if (msg->data!=NULL) free(msg->data);
+			if (msg!=NULL) free(msg);
 		}
-		else
-			std::cout<<"[rdt_receiver][Receiver_FromLowerLayer]pkt->data[1]!=expected_seq"<<std::endl;
+		else if(isLater(expected_seq,pkt->data[1]))
+		{
+			buffer.push_back(pkt);
+			std::cout<<"[rdt_receiver][Receiver_FromLowerLayer]buffer packet seq="<<(int)pkt->data[1]<<std::endl;
+		}
 	}
 	else
 		std::cout<<"[rdt_receiver][Receiver_FromLowerLayer]checkPacket failed"<<std::endl;
+	std::cout<<"[rdt_receiver][Receiver_FromLowerLayer]end"<<std::endl;
 }
 
 static bool checkPacket(packet *pkt)
@@ -109,4 +138,11 @@ static bool checkPacket(packet *pkt)
 	cout<<"[rdt_sender][checkPacket]sum="<<sum<<endl;
 	//return sum==0xffff;*/
 	return true;
+}
+
+static bool isLater(int a,int b)
+{
+	if(a>SEQ_MAX-WIN_SIZE)
+		return b>a||b<(a+WIN_SIZE)%SEQ_MAX;
+	return b>a&&b<a+WIN_SIZE;
 }
