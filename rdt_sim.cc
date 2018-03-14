@@ -13,7 +13,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <unistd.h>
-
+#include <iostream>
 #include "rdt_struct.h"
 #include "rdt_sender.h"
 #include "rdt_receiver.h"
@@ -276,6 +276,8 @@ bool Sender_isTimerSet()
 /* pass a packet to the lower layer at the sender */
 void Sender_ToLowerLayer(struct packet *pkt)
 {
+	std::cout<<"[rdt_sim][Sender_ToLowerLayer]pkt->size="<<(int)pkt->data[0]<<std::endl;
+	std::cout<<"[rdt_sim][Sender_ToLowerLayer]pkt->seq="<<(int)pkt->data[1]<<std::endl;
     /* packet lost at rate "loss_rate" */
     if (myrandom()<loss_rate) return;
 
@@ -396,7 +398,7 @@ int main(int argc, char *argv[])
 	fprintf(stderr, "invalid <tracing_level>\n");
 	exit(-1);
     }
-    
+    /*
     fprintf(stdout, "## Reliable data transfer simulation with:\n"
 	    "\tsimulation time is %.3f seconds\n"
 	    "\taverage message arrival interval is %.3f seconds\n"
@@ -408,7 +410,7 @@ int main(int argc, char *argv[])
 	    "Please review these inputs and press <enter> to proceed.\n",
 	    sim_time, msg_arrivalint, msg_size, outoforder_rate*100.0, 
 	    loss_rate*100.0, corrupt_rate*100.0, tracing_level);
-    fgetc(stdin);
+    fgetc(stdin);*/
 
     /* initialize the random number generator */
     srand(getpid()+getppid());
@@ -442,6 +444,7 @@ int main(int argc, char *argv[])
 
 	switch (e->event_type) {
 	case EVENT_SENDER_FROMUPPERLAYER:
+	std::cout<<std::endl<<"[rdt_sim][main]event_sender_fromupperlayer"<<std::endl;
 	    {
 		if (tracing_level>=1) {
 		    fprintf(stdout, "Time %.2fs (Sender): the upper layer instructs rdt layer to send out a message.\n", sim_core.time());
@@ -465,6 +468,7 @@ int main(int argc, char *argv[])
 	    break;
 
 	case EVENT_SENDER_FROMLOWERLAYER:
+		std::cout<<"[rdt_sim][main]event_sender_fromlowerlayer"<<std::endl;
 	    {
 		if (tracing_level>=1) {
 		    fprintf(stdout, "Time %.2fs (Sender): the lower layer informs the rdt layer that a packet is received from the link.\n", sim_core.time());
@@ -479,6 +483,7 @@ int main(int argc, char *argv[])
 	    break;
 
 	case EVENT_SENDER_TIMEOUT:
+		std::cout<<"[rdt_sim][main]event_sender_timeout"<<std::endl;
 	    {
 		if (tracing_level>=1) {
 		    fprintf(stdout, "Time %.2fs (Sender): the timer expires.\n", sim_core.time());
@@ -493,6 +498,7 @@ int main(int argc, char *argv[])
 	    break;
 
 	case EVENT_RECEIVER_FROMLOWERLAYER:
+		std::cout<<"[rdt_sim][main]event_receiver_fromlowerlayer"<<std::endl;
 	    {
 		if (tracing_level>=1) {
 		    fprintf(stdout, "Time %.2fs (Receiver): the lower layer informs the rdt layer that a packet is received from the link.\n", sim_core.time());
