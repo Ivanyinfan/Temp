@@ -1,0 +1,22 @@
+515030910040 殷凡 sjtu-yinfan@sjtu.edu.cn
+
+采用selective repeat的协议实现，checksum使用Internet checksum
+
+sender实现
+关键全局变量：
+	static int current_seq,received_seq 当前序列和当前已收到ack的序列号，0-29
+	static list<packet> window 当前所有已有数据的窗口，缓存了还没有发的包
+	static int acwinsize 当实际窗口的大小，0-10
+	static list<packet>::iterator next_to_send 下一个要发送的包的位置
+	static list<int> ack_buffer ack buffer用于缓存提前收到的ack
+	static list<Timers> timers 计时器，struct Timrs包含了每个包计时器的信息（相对上一个包的超时时间和包位置）
+函数实现：
+	Sender_FromUpperLayer：把消息拆分成包并放入window缓存，如果实际窗口大小没有达到上限，发包到上限
+	Sender_FromLowerLayer：1.验证包2.如果ack是当前期望的ack，停止计时，检查ack_buffer，窗口右移3.否则如果ack是后面包的且不在缓存中，停止它的计时器，放入缓存4.否则丢弃包
+	Sender_Timeout：1.如果过期的序列已收到，清空计时器中所有过期已收到的序列，如果之后的序列同一批且过期，重发2.否则重发这一批的包（相对世间为零的为同一批）
+
+receiver实现：
+关键全局变量：
+	static list<packet> buffer 包缓存，用于缓存提前收到的包
+函数实现：
+	Receiver_FromLowerLayer：1.检查包2.如果序列是当前期望的，发回ack，检查buffer，窗口右移3.否则如果是之后的包，加入缓存中4.否则重发ack
