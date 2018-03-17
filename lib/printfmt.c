@@ -40,8 +40,15 @@ printnum(void (*putch)(int, void*), void *putdat,
 	// space on the right side if neccesary.
 	// you can add helper function if needed.
 	// your code here:
-
-
+	int length,showsign=0;
+	if(padc=='-'&&num>=base)
+	{
+		length=*(int *)putdat;
+		printnum(putch,putdat,num/base,base,0,padc);
+	}
+	else
+	{
+	
 	// first recursively print all preceding (more significant) digits
 	if (num >= base) {
 		printnum(putch, putdat, num / base, base, width - 1, padc);
@@ -50,9 +57,16 @@ printnum(void (*putch)(int, void*), void *putdat,
 		while (--width > 0)
 			putch(padc, putdat);
 	}
-
+	}
 	// then print this (the least significant) digit
 	putch("0123456789abcdef"[num % base], putdat);
+	
+	if(padc=='-'&&width>0)
+	{
+		length=*(int *)putdat-length;
+		for(int i=0;i<width-length;++i)
+			putch(' ',putdat);
+	}
 }
 
 // Get an unsigned int of various possible sizes from a varargs list,
@@ -110,6 +124,11 @@ vprintfmt(void (*putch)(int, void*), void *putdat, const char *fmt, va_list ap)
 	reswitch:
 		switch (ch = *(unsigned char *) fmt++) {
 
+		// flag to show the sign
+		case '+':
+			padc='+';
+			goto reswitch;
+		
 		// flag to pad on the right
 		case '-':
 			padc = '-';
@@ -200,6 +219,11 @@ vprintfmt(void (*putch)(int, void*), void *putdat, const char *fmt, va_list ap)
 				putch('-', putdat);
 				num = -(long long) num;
 			}
+			else
+			{
+				if(padc=='+')
+					putch('+', putdat);
+			}
 			base = 10;
 			goto number;
 
@@ -213,10 +237,10 @@ vprintfmt(void (*putch)(int, void*), void *putdat, const char *fmt, va_list ap)
 		case 'o':
 			// Replace this with your code.
 			// display a number in octal form and the form should begin with '0'
-			putch('X', putdat);
-			putch('X', putdat);
-			putch('X', putdat);
-			break;
+			putch('0', putdat);
+			num = getuint(&ap, lflag);
+			base = 8;
+			goto number;
 
 		// pointer
 		case 'p':
@@ -256,7 +280,15 @@ vprintfmt(void (*putch)(int, void*), void *putdat, const char *fmt, va_list ap)
             const char *overflow_error = "\nwarning! The value %n argument pointed to has been overflowed!\n";
 
             // Your code here
-
+			num=(unsigned long long)(uintptr_t)va_arg(ap, void *);
+			if(!num)
+				*(int *)putdat+=cprintf("%s",null_error);
+			else
+			{
+				*(char *)(int)num=*(int *)putdat;
+				if((*(int *)putdat)>128)
+					*(int *)putdat+=cprintf("%s",overflow_error);
+			}
             break;
         }
 

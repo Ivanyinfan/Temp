@@ -24,6 +24,7 @@ struct Command {
 static struct Command commands[] = {
 	{ "help", "Display this list of commands", mon_help },
 	{ "kerninfo", "Display information about the kernel", mon_kerninfo },
+	{ "time", "", mon_time },
 };
 #define NCOMMANDS (sizeof(commands)/sizeof(commands[0]))
 
@@ -69,11 +70,47 @@ int
 mon_backtrace(int argc, char **argv, struct Trapframe *tf)
 {
 	// Your code here.
+	uint32_t next_ebp,pretaddr;
+	uint32_t args[5];
+	uint32_t ebp=read_ebp();
+	int i=0;
+	while(ebp!=0)
+	{
+		next_ebp=*(uint32_t *)ebp;
+		pretaddr=*(uint32_t *)(ebp+4);
+		for(int i=0;i<5;++i)
+			args[i]=*(uint32_t *)(ebp+8+4*i);
+		cprintf("eip %x ebp %x args %x %x %x %x %x\n",pretaddr,ebp,args[0],args[1],args[2],args[3],args[4]);
+		ebp=next_ebp;
+	}
     cprintf("Backtrace success\n");
 	return 0;
 }
 
-
+int mon_time(int argc,char **argv,struct Trapframe *tf)
+{
+	if(argc==1)
+		return 0;
+	uint64_t cycles;
+	int flag=0;
+	for(int i = 0;i<NCOMMANDS;++i)
+	{
+		if(strcmp(argv[1],commands[i].name)==0)
+		{
+			flag=1;
+			cycles=read_tsc();
+			commands[i].func(argc, argv, tf);
+			cycles=read_tsc()-cycles;
+			break;
+		}
+	}
+	if(!flag)
+		cprintf("Unknown command '%s'\n", argv[1]);
+	else
+		cprintf("");
+	return 0;
+}
+	
 
 /***** Kernel monitor command interpreter *****/
 
@@ -111,6 +148,7 @@ runcmd(char *buf, struct Trapframe *tf)
 	// Lookup and invoke the command
 	if (argc == 0)
 		return 0;
+	
 	for (i = 0; i < NCOMMANDS; i++) {
 		if (strcmp(argv[0], commands[i].name) == 0)
 			return commands[i].func(argc, argv, tf);
