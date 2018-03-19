@@ -73,14 +73,23 @@ mon_backtrace(int argc, char **argv, struct Trapframe *tf)
 	uint32_t next_ebp,pretaddr;
 	uint32_t args[5];
 	uint32_t ebp=read_ebp();
-	int i=0;
+	struct Eipdebuginfo info;
+	int result;
 	while(ebp!=0)
 	{
 		next_ebp=*(uint32_t *)ebp;
 		pretaddr=*(uint32_t *)(ebp+4);
 		for(int i=0;i<5;++i)
 			args[i]=*(uint32_t *)(ebp+8+4*i);
-		cprintf("eip %x ebp %x args %x %x %x %x %x\n",pretaddr,ebp,args[0],args[1],args[2],args[3],args[4]);
+		cprintf("eip %x ebp %x args %08x %08x %08x %08x %08x\n",pretaddr,ebp,args[0],args[1],args[2],args[3],args[4]);
+		result=debuginfo_eip(pretaddr,&info);
+		if(result)
+			return result;
+		cprintf("%s:%d: ",info.eip_file,info.eip_line);
+		char buffer[info.eip_fn_namelen+1];
+		snprintf(buffer,info.eip_fn_namelen+1,"%s",info.eip_fn_name);
+		cprintf("%s",buffer);
+		cprintf("+%d\n",pretaddr-info.eip_fn_addr);
 		ebp=next_ebp;
 	}
     cprintf("Backtrace success\n");
@@ -107,7 +116,7 @@ int mon_time(int argc,char **argv,struct Trapframe *tf)
 	if(!flag)
 		cprintf("Unknown command '%s'\n", argv[1]);
 	else
-		cprintf("");
+		cprintf("%s cycles: %d\n",argv[1],cycles);
 	return 0;
 }
 	
