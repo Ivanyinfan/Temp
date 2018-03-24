@@ -7,25 +7,19 @@
 #
 OBJDIR := obj
 
-ifdef LAB
-SETTINGLAB := true
-else
--include conf/lab.mk
+# Run 'make V=1' to turn on verbose commands, or 'make V=0' to turn them off.
+ifeq ($(V),1)
+override V =
 endif
+ifeq ($(V),0)
+override V = @
+endif
+
+-include conf/lab.mk
 
 -include conf/env.mk
 
-ifndef SOL
-SOL := 0
-endif
-ifndef LABADJUST
-LABADJUST := 0
-endif
-
-ifndef LABSETUP
-LABSETUP := ./
-endif
-
+LABSETUP ?= ./
 
 TOP = .
 
@@ -91,7 +85,8 @@ PERL	:= perl
 # -fno-builtin is required to avoid refs to undefined functions in the kernel.
 # Only optimize to -O1 to discourage inlining, which complicates backtraces.
 CFLAGS := $(CFLAGS) $(DEFS) $(LABDEFS) -O1 -fno-builtin -I$(TOP) -MD 
-CFLAGS += -Wall -Wno-format -Wno-unused -Werror -gstabs -m32 -fno-omit-frame-pointer
+CFLAGS += -fno-omit-frame-pointer
+CFLAGS += -Wall -Wno-format -Wno-unused -Werror -gstabs -m32
 
 # Add -fno-stack-protector if the option exists.
 CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
@@ -118,7 +113,8 @@ all:
 
 # make it so that no intermediate .o files are ever deleted
 .PRECIOUS: %.o $(OBJDIR)/boot/%.o $(OBJDIR)/kern/%.o \
-	$(OBJDIR)/lib/%.o $(OBJDIR)/fs/%.o $(OBJDIR)/user/%.o
+	   $(OBJDIR)/lib/%.o $(OBJDIR)/fs/%.o $(OBJDIR)/net/%.o \
+	   $(OBJDIR)/user/%.o
 
 KERN_CFLAGS := $(CFLAGS) -DJOS_KERNEL -gstabs
 USER_CFLAGS := $(CFLAGS) -DJOS_USER -gstabs
@@ -132,7 +128,7 @@ include kern/Makefrag
 
 
 IMAGES = $(OBJDIR)/kern/kernel.img
-QEMUOPTS = -hda $(OBJDIR)/kern/kernel.img -serial mon:stdio
+QEMUOPTS = -hda $(OBJDIR)/kern/kernel.img -serial mon:stdio $(QEMUEXTRA)
 
 .gdbinit: .gdbinit.tmpl
 	sed "s/localhost:1234/localhost:$(GDBPORT)/" < $^ > $@
@@ -141,20 +137,22 @@ qemu: $(IMAGES)
 	$(QEMU) $(QEMUOPTS)
 
 qemu-nox: $(IMAGES)
-	echo "*** Use Ctrl-a x to exit"
+	@echo "***"
+	@echo "*** Use Ctrl-a x to exit qemu"
+	@echo "***"
 	$(QEMU) -nographic $(QEMUOPTS)
 
 qemu-gdb: $(IMAGES) .gdbinit
+	@echo "***"
 	@echo "*** Now run 'gdb'." 1>&2
+	@echo "***"
 	$(QEMU) $(QEMUOPTS) -S $(QEMUGDB)
 
-qemu-gdb-nox: $(IMAGES) .gdbinit
+qemu-nox-gdb: $(IMAGES) .gdbinit
+	@echo "***"
 	@echo "*** Now run 'gdb'." 1>&2
+	@echo "***"
 	$(QEMU) -nographic $(QEMUOPTS) -S $(QEMUGDB)
-
-
-which-qemu:
-	@echo $(QEMU)
 
 print-qemu:
 	@echo $(QEMU)
@@ -167,7 +165,7 @@ print-qemugdb:
 
 # For deleting the build
 clean:
-	rm -rf $(OBJDIR)
+	rm -rf $(OBJDIR) .gdbinit jos.in
 
 realclean: clean
 	rm -rf lab$(LAB).tar.gz jos.out
@@ -176,13 +174,15 @@ distclean: realclean
 	rm -rf conf/gcc.mk
 
 grade: $(LABSETUP)grade-lab$(LAB).sh
-	$(V)$(MAKE) clean >/dev/null 2>/dev/null
+	@echo $(MAKE) clean
+	@$(MAKE) clean || \
+	  (echo "'make clean' failed.  HINT: Do you have another running instance of JOS?" && exit 1)
 	$(MAKE) all
 	sh $(LABSETUP)grade-lab$(LAB).sh
 
 handin: tarball
 	@echo
-	@echo "Please upload your tar file to ftp(in os's lab1 webpage)"
+	@echo "Please upload your tar file to ftp(in os's lab2 webpage)"
 	@echo
 	@echo "For example, if your student id is 123456, then replace <student id>.tar.gz to 123456.tar.gz"
 
@@ -215,4 +215,4 @@ always:
 	@:
 
 .PHONY: all always \
-	handin tarball clean realclean clean-labsetup distclean grade labsetup
+	handin tarball clean realclean distclean grade
