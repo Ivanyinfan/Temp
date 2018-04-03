@@ -1,0 +1,18 @@
+Question
+1、x是uintptr_t类型
+2、Entry Virtual Address     Points to
+   958   0xef800000          内核栈(从0xefbf8000开始）
+   956   0xef000000          pages信息
+   0     0x00000000          内核
+3、因为这些页表的user位没有被置上，所以用户没有读写权限
+4、4G。因为是32位系统
+5、4K+4M。通过多级页表减少内存管理需要的空间
+6、在jmp %eax之后在KERNBASE以上跑。因为我们把虚拟地址的0-4M同样映射到了物理地址0-4M，所以EIP在低地址依然可以运行，因为KERNBASE-KERNBASE+4M映射到了0-4M，所以高地址也可以运行。转换是因为现在内核在高地址上（KERNBASE以上）运行。
+
+Challenge2
+1、mon_showmappings展示map关系，三个参数，后两个分别是起始虚拟地址和结束虚拟地址。用strtol分析输入，pgdir_walk检查map关系，如果有映射（页表为单位），展示对应关系。如果没有，物理地址部分输出NULL
+2、mon_changepermissions改变权限，三个参数，第二个为地址，第三个为新的权限（十六进制数，用户保证合法性）。用pgdir_walk找到对应的pte，如果是大页，返回pde（这里重新修改了pgdir_walk支持这一功能）。如果没有映射，报错返回。否则修改pte（或pde）中的内容。
+3、mon_dump来dump内存，四个参数，第二个为va或pa，后两个参数为起始和结束地址。va状态下，直接遍历取值，pgdir_walk检查是否有映射，没有的输出NULL。pa状态下，先判断是否有映射。有的话用page_insert把一段虚拟地址映射过来，然后通过对这段虚拟地址的取值来输出。
+
+515030910040
+殷凡
