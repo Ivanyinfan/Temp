@@ -163,12 +163,23 @@ int mon_changepermissions(int argc,char **argv,struct Trapframe* tf)
 
 int mon_dump(int argc,char **argv,struct Trapframe* tf)
 {
-	if(argc!=3)
+	if(argc!=4)
 		return -1;
-	uintptr_t *start_va=(uintptr_t *)strtol(argv[1],NULL,16);
-	uintptr_t *end_va=(uintptr_t *)strtol(argv[2],NULL,16);
-	for(char *i=(char *)start_va;i<=(char *)end_va;i++)
-		cprintf("%p: 0x%x\n",i,*i);
+	if(strcmp(argv[1],"va")==0)
+	{
+		uintptr_t *start_va=(uintptr_t *)strtol(argv[2],NULL,16);
+		uintptr_t *end_va=(uintptr_t *)strtol(argv[3],NULL,16);
+		for(char *i=(char *)start_va;i<=(char *)end_va;i++)
+		{
+			pte_t *pte=pgdir_walk(KADDR(rcr3()),(void *)i,0);
+			if(pte==NULL||!(*pte&PTE_P))
+				cprintf("%p: NULL\n",i);
+			else
+				cprintf("%p: 0x%x\n",i,*i);
+		}
+	}
+	else
+		cprintf("dump not supported\n");
 	return 0;
 }
 
