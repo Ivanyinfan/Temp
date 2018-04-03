@@ -10,6 +10,7 @@
 #include <kern/console.h>
 #include <kern/monitor.h>
 #include <kern/kdebug.h>
+#include <kern/pmap.h>
 
 #define CMDBUF_SIZE	80	// enough for one VGA text line
 
@@ -25,6 +26,9 @@ static struct Command commands[] = {
 	{ "help", "Display this list of commands", mon_help },
 	{ "kerninfo", "Display information about the kernel", mon_kerninfo },
 	{ "time", "", mon_time },
+	{ "showmappings", "", mon_showmappings },
+	{ "changepermissions", "", mon_changepermissions },
+	{ "dump", "", mon_dump }
 };
 #define NCOMMANDS (sizeof(commands)/sizeof(commands[0]))
 
@@ -119,7 +123,54 @@ int mon_time(int argc,char **argv,struct Trapframe *tf)
 		cprintf("%s cycles: %d\n",argv[1],cycles);
 	return 0;
 }
-	
+
+int mon_showmappings(int argc,char **argv,struct Trapframe* tf)
+{
+	if(argc!=3)
+		return -1;
+	pte_t *pte;
+	uintptr_t start_va=strtol(argv[1],NULL,16);
+	uintptr_t end_va=strtol(argv[2],NULL,16);
+	for(uintptr_t i=PTE_ADDR(start_va);i<=PTE_ADDR(end_va);i+=PGSIZE)
+	{
+		cprintf("virtual address=%p,",i);
+		pte_t *pte=pgdir_walk(KADDR(rcr3()),(void *)i,0);
+		if(pte==NULL||!(*pte&PTE_P))
+			cprintf("physical address=NULL\n");
+		else if(*pte&PTE_PS)
+			cprintf("physical address=%p\n",PTE_ADDR(*pte)|(PTX(i)<<PTXSHIFT));
+		else
+			cprintf("physical address=%p\n",PTE_ADDR(*pte));
+	}
+	return 0;
+}
+
+int mon_changepermissions(int argc,char **argv,struct Trapframe* tf)
+{
+	if(argc!=3)
+		return -1;
+	uintptr_t va=strtol(argv[1],NULL,16);
+	uintptr_t permission=strtol(argv[2],NULL,16);
+	pte_t *pte=pgdir_walk(KADDR(rcr3()),(void *)va,0);
+	if(pte==NULL||!(*pte&PTE_P))
+		cprintf("virtual address %p not mapped\n",va);
+	else if(*pte&PTE_PS)
+		*pte=PTE_ADDR(*pte)|permission|PTE_PS|PTE_P;
+	else
+		*pte=PTE_ADDR(*pte)|permission|PTE_P;
+	return 0;
+}
+
+int mon_dump(int argc,char **argv,struct Trapframe* tf)
+{
+	if(argc!=3)
+		return -1;
+	uintptr_t *start_va=(uintptr_t *)strtol(argv[1],NULL,16);
+	uintptr_t *end_va=(uintptr_t *)strtol(argv[2],NULL,16);
+	for(char *i=(char *)start_va;i<=(char *)end_va;i++)
+		cprintf("%p: 0x%x\n",i,*i);
+	return 0;
+}
 
 /***** Kernel monitor command interpreter *****/
 

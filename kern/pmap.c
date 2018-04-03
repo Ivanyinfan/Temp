@@ -197,7 +197,6 @@ mem_init(void)
 	// we just set up the mapping anyway.
 	// Permissions: kernel RW, user NONE
 	// Your code goes here:
-	//boot_map_region(kern_pgdir,KERNBASE,(uint32_t)0xFFFFFFFF-KERNBASE,0,PTE_W);
 	boot_map_region_large(kern_pgdir,KERNBASE,(uint32_t)0xFFFFFFFF-KERNBASE,0,PTE_W);
 	lcr4(rcr4()|CR4_PSE);
 
@@ -358,6 +357,8 @@ pgdir_walk(pde_t *pgdir, const void *va, int create)
 		pte=(pte_t *)page2pa(result);
 		pgdir[PDX(va)]=(physaddr_t)pte|create;
 	}
+	else if((physaddr_t)pte&PTE_PS)
+		return &pgdir[PDX(va)];
 	return &((pte_t *)KADDR(PTE_ADDR(pte)))[PTX(va)];
 }
 
