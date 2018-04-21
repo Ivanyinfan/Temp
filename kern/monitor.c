@@ -29,7 +29,10 @@ static struct Command commands[] = {
 	{ "time", "", mon_time },
 	{ "showmappings", "", mon_showmappings },
 	{ "changepermissions", "", mon_changepermissions },
-	{ "dump", "", mon_dump }
+	{ "dump", "", mon_dump },
+	{ "c", "", mon_c },
+	{ "si", "", mon_si },
+	{ "x", "", mon_x }
 };
 #define NCOMMANDS (sizeof(commands)/sizeof(commands[0]))
 
@@ -181,6 +184,32 @@ int mon_dump(int argc,char **argv,struct Trapframe* tf)
 	}
 	else
 		cprintf("dump not supported\n");
+	return 0;
+}
+
+int mon_c(int argc,char **argv,struct Trapframe* tf)
+{
+	tf->tf_eflags&=~FL_TF;
+	return -1;
+}
+
+int mon_si(int argc,char **argv,struct Trapframe* tf)
+{
+	tf->tf_eflags|=FL_TF;
+	struct Eipdebuginfo info;
+	int r=debuginfo_eip(tf->tf_eip,&info);
+	if(r)
+		return r;
+	cprintf("tf_eip=%08x\n",tf->tf_eip);
+	return -1;
+}
+
+int mon_x(int argc,char **argv,struct Trapframe* tf)
+{
+	if(argc!=2||tf==NULL)
+		return -1;
+	uintptr_t va=strtol(argv[1],NULL,16);
+	cprintf("%d\n",*(int *)va);
 	return 0;
 }
 
