@@ -55,7 +55,7 @@ holding(struct spinlock *lock)
 	return lock->locked && lock->cpu == thiscpu;
 #else
 	//LAB 4: Your code here
-	panic("ticket spinlock: not implemented yet");
+	return lock->cpu==thiscpu;
 
 #endif
 }
@@ -68,6 +68,7 @@ __spin_initlock(struct spinlock *lk, char *name)
 	lk->locked = 0;
 #else
 	//LAB 4: Your code here
+	lk->own=lk->next=0;
 
 #endif
 
@@ -97,6 +98,9 @@ spin_lock(struct spinlock *lk)
 		asm volatile ("pause");
 #else
 	//LAB 4: Your code here
+	unsigned ticket=atomic_return_and_add(&lk->next,1);
+	while(atomic_return_and_add(&lk->own,0)!=ticket)
+		asm volatile("pause");
 
 #endif
 
@@ -149,5 +153,6 @@ spin_unlock(struct spinlock *lk)
 	xchg(&lk->locked, 0);
 #else
 	//LAB 4: Your code here
+	atomic_return_and_add(&lk->own,1);
 #endif
 }
