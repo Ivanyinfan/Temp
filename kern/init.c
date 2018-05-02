@@ -145,6 +145,7 @@ void
 mp_main(void)
 {
 	// We are in high EIP now, safe to switch to kern_pgdir 
+	lcr4(rcr4()|CR4_PSE);
 	lcr3(PADDR(kern_pgdir));
 	cprintf("SMP: CPU %d starting\n", cpunum());
 

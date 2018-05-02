@@ -215,7 +215,7 @@ mem_init(void)
 	// we just set up the mapping anyway.
 	// Permissions: kernel RW, user NONE
 	// Your code goes here:
-	boot_map_region_large(kern_pgdir,KERNBASE,(uint32_t)0xFFFFFFFF-KERNBASE,0,PTE_W);
+	boot_map_region_large(kern_pgdir,KERNBASE,IOMEMBASE-KERNBASE,0,PTE_W);
 	lcr4(rcr4()|CR4_PSE);
 
 	// Initialize the SMP-related parts of the memory map
@@ -274,6 +274,11 @@ mem_init_mp(void)
 	//     Permissions: kernel RW, user NONE
 	//
 	// LAB 4: Your code here:
+	for(int i=0;i<NCPU;++i)
+	{
+		uintptr_t kstacktop_i=KSTACKTOP-i*(KSTKSIZE+KSTKGAP);
+		boot_map_region(kern_pgdir,kstacktop_i-KSTKSIZE,KSTKSIZE,PADDR(percpu_kstacks[i]),PTE_W);
+	}
 
 }
 
@@ -316,7 +321,7 @@ page_init(void)
 	size_t i;
 	char *first_free_page=(char *)boot_alloc(0);
 	for (i = 0; i < npages; i++) {
-		if((page2pa(pages+i)>=PGSIZE&&page2pa(pages+i)<IOPHYSMEM)||(page2pa(pages+i)>=EXTPHYSMEM&&(char *)page2kva(pages+i)>=first_free_page))
+		if(((page2pa(pages+i)>=PGSIZE&&page2pa(pages+i)<IOPHYSMEM)||(page2pa(pages+i)>=EXTPHYSMEM&&(char *)page2kva(pages+i)>=first_free_page))&&page2pa(pages+i)!=MPENTRY_PADDR)
 		{
 			pages[i].pp_ref = 0;
 			pages[i].pp_link = page_free_list;
@@ -445,7 +450,10 @@ boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm
 {
 	// Fill this function in
 	//cprintf("kern/pmap.c [boot_map_region] va=%p,size=%p,pa=%p\n",va,size,pa);
-	for(uint32_t end=va+size;va<end;va+=PGSIZE,pa+=PGSIZE)
+	uint32_t end=va+size;
+	if(end<=va)
+		end=~0;
+	for(;va<end;va+=PGSIZE,pa+=PGSIZE)
 	{
 		if(va==0&&end==0xFFFFFFFF)
 			return;
@@ -892,6 +900,7 @@ check_va2pa(pde_t *pgdir, uintptr_t va)
 	pgdir = &pgdir[PDX(va)];
 	if (!(*pgdir & PTE_P))
 		return ~0;
+	//cprintf("kern/pmap.c [check_va2pa] va=%p,*pgdir=%p\n",va,*pgdir);
 	p = (pte_t*) KADDR(PTE_ADDR(*pgdir));
 	if (!(p[PTX(va)] & PTE_P))
 		return ~0;
