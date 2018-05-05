@@ -25,6 +25,11 @@ pgfault(struct UTrapframe *utf)
 	//   (see <inc/memlayout.h>).
 
 	// LAB 4: Your code here.
+	addr=ROUNDDOWN(addr,PGSIZE);
+	if((err&FEC_WR)==0)
+		panic("pgfault: faulting access was not a write");
+	if(!(vpd[PDX(addr)]&PTE_P)||!(vpt[PGNUM(addr)]&PTE_P)||!(vpt[PGNUM(addr)]))
+		panic("pgfault: faulting access was not to a copy-on-write page");
 
 	// Allocate a new page, map it at a temporary location (PFTEMP),
 	// copy the data from the old page to the new page, then move the new
@@ -34,8 +39,16 @@ pgfault(struct UTrapframe *utf)
 	//   No need to explicitly delete the old page's mapping.
 
 	// LAB 4: Your code here.
-
-	panic("pgfault not implemented");
+	r=sys_page_alloc(0,PFTEMP,PTE_P|PTE_U|PTE_W);
+	if(r)
+		panic("pgfault: %e",r);
+	memmove(PFTEMP,addr,PGSIZE);
+	r=sys_page_map(0,PFTEMP,0,addr,PTE_P|PTE_U|PTE_W);
+	if(r)
+		panic("pgfault: %e",r);
+	r=sys_page_unmap(0,PFTEMP);
+	if(r)
+		panic("pgfault: %e",r);
 }
 
 //
@@ -55,7 +68,24 @@ duppage(envid_t envid, unsigned pn)
 	int r;
 
 	// LAB 4: Your code here.
-	panic("duppage not implemented");
+	uintptr_t addr=pn*PGSIZE;
+	if((vpd[PDX(addr)]&PTE_P)==0||(vpt[PGNUM(addr)]&PTE_P)==0)
+		return 0;
+	if(vpt[PGNUM(addr)]&(PTE_W|PTE_COW))
+	{
+		r=sys_page_map(0,(void *)addr,envid,(void *)addr,PTE_P|PTE_U|PTE_COW);
+		if(r)
+			return r;
+		r=sys_page_map(0,(void *)addr,0,(void *)addr,PTE_U|PTE_P|PTE_COW);
+		if(r)
+			return r;
+	}
+	else
+	{
+		r=sys_page_map(0,(void *)addr,envid,(void *)addr,PTE_P|PTE_U);
+		if(r)
+			return r;
+	}
 	return 0;
 }
 
@@ -79,7 +109,33 @@ envid_t
 fork(void)
 {
 	// LAB 4: Your code here.
-	panic("fork not implemented");
+	int r;
+	set_pgfault_handler(pgfault);
+	envid_t envid=sys_exofork();
+	if(envid<0)
+		panic("sys_exofork: %e", envid);
+	if(envid==0)
+	{
+		thisenv=&envs[ENVX(sys_getenvid())];
+		return 0;
+	}
+	for(uintptr_t addr=UTEXT;addr<USTACKTOP;addr+=PGSIZE)
+	{
+		r=duppage(envid,PGNUM(addr));
+		if(r)
+			return r;
+	}
+	r=sys_page_alloc(envid,(void *)(UXSTACKTOP-PGSIZE),PTE_P|PTE_U|PTE_W);
+	if(r)
+		return r;
+	extern void _pgfault_upcall(void);
+	r=sys_env_set_pgfault_upcall(envid,_pgfault_upcall);
+	if(r)
+		return r;
+	r=sys_env_set_status(envid,ENV_RUNNABLE);
+	if(r)
+		return r;
+	return envid;
 }
 
 // Challenge!

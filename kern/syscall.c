@@ -146,7 +146,12 @@ static int
 sys_env_set_pgfault_upcall(envid_t envid, void *func)
 {
 	// LAB 4: Your code here.
-	panic("sys_env_set_pgfault_upcall not implemented");
+	struct Env *env_store;
+	int r=envid2env(envid,&env_store,1);
+	if(r)
+		return r;
+	env_store->env_pgfault_upcall=func;
+	return 0;
 }
 
 // Allocate a page of memory and map it at 'va' with permission
@@ -176,7 +181,6 @@ sys_page_alloc(envid_t envid, void *va, int perm)
 	//   allocated!
 
 	// LAB 4: Your code here.
-	cprintf("kern/syscall.c [sys_page_alloc] ...\n");
 	if((uintptr_t)va>=UTOP||(uintptr_t)va%PGSIZE!=0)
 		return -E_INVAL;
 	if((perm&PTE_U)==0||(perm&PTE_P)==0||perm&~(PTE_U|PTE_P|PTE_AVAIL|PTE_W))
@@ -222,7 +226,6 @@ sys_page_map(envid_t srcenvid, void *srcva,
 	//   check the current permissions on the page.
 
 	// LAB 4: Your code here.
-	cprintf("kern/syscall.c [sys_page_map] ...\n");
 	if((uintptr_t)srcva>=UTOP||(uintptr_t)srcva%PGSIZE!=0||(uintptr_t)dstva>=UTOP||(uintptr_t)dstva%PGSIZE!=0)
 		return -E_INVAL;
 	if((perm&PTE_U)==0||(perm&PTE_P)==0||perm&~(PTE_U|PTE_P|PTE_AVAIL|PTE_W))
@@ -389,6 +392,8 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 			return sys_page_map(a1, (void *)a2, a3, (void *)a4, a5);
 		case SYS_page_unmap:
 			return sys_page_unmap(a1, (void *)a2);
+		case SYS_env_set_pgfault_upcall:
+			return sys_env_set_pgfault_upcall(a1,(void *)a2);
         default:
             return -E_INVAL;
     }

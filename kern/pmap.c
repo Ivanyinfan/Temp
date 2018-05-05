@@ -428,10 +428,10 @@ pgdir_walk(pde_t *pgdir, const void *va, int create)
 			return NULL;
 		result->pp_ref++;
 		pte=(pte_t *)page2pa(result);
-		pgdir[PDX(va)]=(physaddr_t)pte|create;
+		pgdir[PDX(va)]=(physaddr_t)pte|PTE_P|PTE_U|PTE_W;
 	}
 	else if((physaddr_t)pte&PTE_PS)
-		return &pgdir[PDX(va)];
+			return &pgdir[PDX(va)];
 	return &((pte_t *)KADDR(PTE_ADDR(pte)))[PTX(va)];
 }
 
@@ -515,7 +515,7 @@ page_insert(pde_t *pgdir, struct Page *pp, void *va, int perm)
 {
 	// Fill this function in
 	//cprintf("kern/pmap.c [page_insert] pgdir=%p,va=%p\n",pgdir,va);
-	pte_t *pte=pgdir_walk(pgdir,va,0);
+	/*pte_t *pte=pgdir_walk(pgdir,va,0);
 	physaddr_t pp_pa=page2pa(pp);
 	if(pte==NULL)
 	{
@@ -526,25 +526,27 @@ page_insert(pde_t *pgdir, struct Page *pp, void *va, int perm)
 		physaddr_t pa=page2pa(page);
 		pgdir[PDX(va)]=pa|perm|PTE_P;
 		((pte_t *)KADDR(pa))[PTX(va)]=PTE_ADDR(pp_pa)|perm|PTE_P;
+		pp->pp_ref++;
 	}
 	else
 	{
-		if(*pte!=0)
+		if(*pte==(PTE_ADDR(pp_pa)|perm|PTE_P))
+			return 0;
+		if(PTE_ADDR(*pte)!=PTE_ADDR(pp_pa))
 		{
-			if(*pte==(PTE_ADDR(pp_pa)|perm|PTE_P))
-				return 0;
-			if(PTE_ADDR(*pte)==PTE_ADDR(pp_pa))
-			{
-				*pte=PTE_ADDR(pp_pa)|perm|PTE_P;
-				pgdir[PDX(va)]=PTE_ADDR(pgdir[PDX(va)])|perm|PTE_P;
-				return 0;
-			}
 			page_remove(pgdir,va);
+			pp->pp_ref++;
 		}
 		*pte=PTE_ADDR(pp_pa)|perm|PTE_P;
 		pgdir[PDX(va)]=PTE_ADDR(pgdir[PDX(va)])|perm|PTE_P;
 	}
+	return 0;*/
+	pte_t *pte=pgdir_walk(pgdir,va,perm|PTE_P);
+	if(pte==NULL)
+		return -E_NO_MEM;
 	pp->pp_ref++;
+	page_remove(pgdir, va);
+	*pte=page2pa(pp) | perm | PTE_P;
 	return 0;
 }
 
