@@ -360,7 +360,7 @@ load_icode(struct Env *e, uint8_t *binary, size_t size)
 	//  What?  (See env_run() and env_pop_tf() below.)
 
 	// LAB 3: Your code here.
-	cprintf("kern/env.c [load_icode] ...\n");
+	//cprintf("kern/env.c [load_icode] ...\n");
 	if(((struct Elf *)binary)->e_magic!=ELF_MAGIC)
 		panic("load_icode: invalid ELF file");
 	struct Proghdr *ph=(struct Proghdr *)(binary+((struct Elf *)binary)->e_phoff);
@@ -535,12 +535,14 @@ env_run(struct Env *e)
 	//	e->env_tf to sensible values.
 
 	// LAB 3: Your code here.
+	//cprintf("kern/env.c [env_run] e->env_id=%d\n",e->env_id);
 	if(curenv&&curenv->env_status==ENV_RUNNING)
 		curenv->env_status=ENV_RUNNABLE;
 	curenv=e;
 	e->env_status=ENV_RUNNING;
 	e->env_runs++;
 	lcr3(PADDR(e->env_pgdir));
+	unlock_kernel();
 	env_pop_tf(&e->env_tf);
 }
 

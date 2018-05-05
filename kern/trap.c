@@ -90,6 +90,7 @@ trap_init(void)
 	extern void aligment_check();
 	extern void machine_check();
 	extern void SIMD_floating_point_error();
+	extern void syscall_handler();
 	extern void sysenter_handler();
 	SETGATE(idt[T_DIVIDE],  0, GD_KT, divide_error,                0);
 	SETGATE(idt[T_DEBUG],   0, GD_KT, debug_exception,             0);
@@ -109,7 +110,7 @@ trap_init(void)
 	SETGATE(idt[T_ALIGN],   0, GD_KT, aligment_check,              0);
 	SETGATE(idt[T_MCHK],    0, GD_KT, machine_check,               0);
 	SETGATE(idt[T_SIMDERR], 0, GD_KT, SIMD_floating_point_error,   0);
-	SETGATE(idt[T_SYSCALL], 0, GD_KT, sysenter_handler,            3);
+	SETGATE(idt[T_SYSCALL], 0, GD_KT, syscall_handler,             3);
 	
 	wrmsr(0x174, GD_KT, 0);
 	wrmsr(0x175, KSTACKTOP, 0);
@@ -225,6 +226,9 @@ trap_dispatch(struct Trapframe *tf)
 			return;
 		case T_PGFLT:
 			page_fault_handler(tf);
+			return;
+		case T_SYSCALL:
+			tf->tf_regs.reg_eax=syscall(tf->tf_regs.reg_eax,tf->tf_regs.reg_ebx, tf->tf_regs.reg_ecx,tf->tf_regs.reg_edx, tf->tf_regs.reg_esi,tf->tf_regs.reg_edi);
 			return;
 	}
 

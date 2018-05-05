@@ -29,12 +29,13 @@ sched_yield(void)
 	// below to switch to this CPU's idle environment.
 
 	// LAB 4: Your code here.
+	//cprintf("kern/sched.c [sched_yield] ...\n");
 	envid_t env_id;
 	if(curenv)
 		env_id=curenv->env_id;
 	else
 		env_id=0;
-	for(i=(env_id+1)%NENV;i!=env_id;i=(i+1)%NENV)
+	for(i=(env_id+1)%NENV;i!=env_id%NENV;i=(i+1)%NENV)
 	{
 		if(envs[i].env_type!=ENV_TYPE_IDLE&&envs[i].env_status==ENV_RUNNABLE)
 			env_run(&envs[i]);

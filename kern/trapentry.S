@@ -49,22 +49,23 @@
  */
 TRAPHANDLER_NOEC(divide_error,T_DIVIDE)
 TRAPHANDLER_NOEC(debug_exception,T_DEBUG)
-TRAPHANDLER(non_maskable_interrupt,T_NMI)
+TRAPHANDLER_NOEC(non_maskable_interrupt,T_NMI)
 TRAPHANDLER_NOEC(break_point,T_BRKPT)
-TRAPHANDLER(overflow,T_OFLOW)
-TRAPHANDLER(bounds_check,T_BOUND)
-TRAPHANDLER(illegal_opcode,T_ILLOP)
-TRAPHANDLER(device_not_available,T_DEVICE)
+TRAPHANDLER_NOEC(overflow,T_OFLOW)
+TRAPHANDLER_NOEC(bounds_check,T_BOUND)
+TRAPHANDLER_NOEC(illegal_opcode,T_ILLOP)
+TRAPHANDLER_NOEC(device_not_available,T_DEVICE)
 TRAPHANDLER(double_fault,T_DBLFLT)
 TRAPHANDLER(invalid_task_switch_segment,T_TSS)
 TRAPHANDLER(segment_not_present,T_SEGNP)
 TRAPHANDLER(stack_exception,T_STACK)
 TRAPHANDLER(general_protection_fault,T_GPFLT)
 TRAPHANDLER(page_fault,T_PGFLT)
-TRAPHANDLER(floating_point_error,T_FPERR)
-TRAPHANDLER(aligment_check,T_ALIGN)
-TRAPHANDLER(machine_check,T_MCHK)
-TRAPHANDLER(SIMD_floating_point_error,T_SIMDERR)
+TRAPHANDLER_NOEC(floating_point_error,T_FPERR)
+TRAPHANDLER_NOEC(aligment_check,T_ALIGN)
+TRAPHANDLER_NOEC(machine_check,T_MCHK)
+TRAPHANDLER_NOEC(SIMD_floating_point_error,T_SIMDERR)
+TRAPHANDLER_NOEC(syscall_handler,T_SYSCALL)
 
 .globl sysenter_handler;
 .type sysenter_handler, @function;
@@ -73,12 +74,13 @@ sysenter_handler:
 /*
  * Lab 3: Your code here for system call handling
  */
+push $0
 pushl %edi
 pushl %ebx
 pushl %ecx
 pushl %edx
 pushl %eax
-call syscall
+call Syscall
 movl %ebp, %ecx
 movl %esi, %edx
 sysexit
