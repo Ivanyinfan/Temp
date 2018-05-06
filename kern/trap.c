@@ -91,7 +91,12 @@ trap_init(void)
 	extern void machine_check();
 	extern void SIMD_floating_point_error();
 	extern void syscall_handler();
-	extern void sysenter_handler();
+	extern void irq_timer();
+	extern void irq_kbd();
+	extern void irq_serial();
+	extern void irq_spurious();
+	extern void irq_ide();
+	extern void irq_error();
 	SETGATE(idt[T_DIVIDE],  0, GD_KT, divide_error,                0);
 	SETGATE(idt[T_DEBUG],   0, GD_KT, debug_exception,             0);
 	SETGATE(idt[T_NMI],     0, GD_KT, non_maskable_interrupt,      0);
@@ -111,10 +116,12 @@ trap_init(void)
 	SETGATE(idt[T_MCHK],    0, GD_KT, machine_check,               0);
 	SETGATE(idt[T_SIMDERR], 0, GD_KT, SIMD_floating_point_error,   0);
 	SETGATE(idt[T_SYSCALL], 0, GD_KT, syscall_handler,             3);
-	
-	wrmsr(0x174, GD_KT, 0);
-	wrmsr(0x175, KSTACKTOP, 0);
-	wrmsr(0x176, (uint32_t)sysenter_handler, 0);
+	SETGATE(idt[IRQ_OFFSET+IRQ_TIMER],    0, GD_KT, irq_timer,    0);
+	SETGATE(idt[IRQ_OFFSET+IRQ_KBD],      0, GD_KT, irq_kbd,      0);
+	SETGATE(idt[IRQ_OFFSET+IRQ_SERIAL],   0, GD_KT, irq_serial,   0);
+	SETGATE(idt[IRQ_OFFSET+IRQ_SPURIOUS], 0, GD_KT, irq_spurious, 0);
+	SETGATE(idt[IRQ_OFFSET+IRQ_IDE],      0, GD_KT, irq_ide,      0);
+	SETGATE(idt[IRQ_OFFSET+IRQ_ERROR],    0, GD_KT, irq_error,    0);
 
 	// Per-CPU setup 
 	trap_init_percpu();
@@ -151,6 +158,11 @@ trap_init_percpu(void)
 	// when we trap to the kernel.
 	thiscpu->cpu_ts.ts_esp0 = KSTACKTOP - thiscpu->cpu_id * (KSTKSIZE + KSTKGAP);
 	thiscpu->cpu_ts.ts_ss0 = GD_KD;
+	
+	extern void sysenter_handler();
+	wrmsr(0x174, GD_KT, 0);
+	wrmsr(0x175, KSTACKTOP, 0);
+	wrmsr(0x176, (uint32_t)sysenter_handler, 0);
 
 	// Initialize the TSS slot of the gdt.
 	gdt[(GD_TSS0 >> 3) + thiscpu->cpu_id] = SEG16(STS_T32A, (uint32_t) (&thiscpu->cpu_ts),
@@ -244,6 +256,11 @@ trap_dispatch(struct Trapframe *tf)
 	// Handle clock interrupts. Don't forget to acknowledge the
 	// interrupt using lapic_eoi() before calling the scheduler!
 	// LAB 4: Your code here.
+	if(tf->tf_trapno==IRQ_OFFSET+IRQ_TIMER)
+	{
+		lapic_eoi();
+		sched_yield();
+	}
 
 	// Unexpected trap: The user process or the kernel has a bug.
 	print_trapframe(tf);
@@ -324,7 +341,10 @@ page_fault_handler(struct Trapframe *tf)
 
 	// LAB 3: Your code here.
 	if((tf->tf_cs&0x3)==0)
+	{
+		print_trapframe(tf);
 		panic("page_fault_handler: kernel page fault");
+	}
 
 	// We've already handled kernel-mode exceptions, so if we get here,
 	// the page fault happened in user mode.
