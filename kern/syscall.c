@@ -154,6 +154,16 @@ sys_env_set_pgfault_upcall(envid_t envid, void *func)
 	return 0;
 }
 
+static int sys_env_set_priority(envid_t envid,uint32_t priority)
+{
+	struct Env *env_store;
+	int r=envid2env(envid,&env_store,1);
+	if(r)
+		return r;
+	env_store->env_priority=priority;
+	return 0;
+}
+
 // Allocate a page of memory and map it at 'va' with permission
 // 'perm' in the address space of 'envid'.
 // The page's contents are set to 0.
@@ -314,18 +324,15 @@ static int
 sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 {
 	// LAB 4: Your code here.
-	//cprintf("kern/syscall.c [sys_ipc_try_send] envid=%d,value=%d,srcva=%p,perm=%d\n",envid,value,srcva,perm);
 	if((uintptr_t)srcva<UTOP&&(uintptr_t)srcva%PGSIZE)
 		return -E_INVAL;
 	perm=PTE_P|PTE_U;
 	if((uintptr_t)srcva<UTOP&&(perm&~PTE_SYSCALL))
 		return -E_INVAL;
-	//cprintf("kern/syscall.c [sys_ipc_try_send] ...\n");
 	struct Env *e;
 	int r=envid2env(envid,&e,0);
 	if(r)
 		return r;
-	//cprintf("kern/syscall.c [sys_ipc_try_send] ...\n");
 	if(!e->env_ipc_recving)
 		return -E_IPC_NOT_RECV;
 	if((uintptr_t)srcva<UTOP)
@@ -334,7 +341,6 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 		struct Page *page=page_lookup(curenv->env_pgdir,srcva,&pte);
 		if(page==NULL||(perm&PTE_W&&(*pte&PTE_W)==0))
 			return -E_INVAL;
-		cprintf("kern/syscall.c [sys_ipc_try_send] ...\n");
 		if((uintptr_t)e->env_ipc_dstva<UTOP)
 		{
 			r=page_insert(e->env_pgdir,page,e->env_ipc_dstva,perm);
@@ -345,7 +351,6 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 		else
 			e->env_ipc_perm=0;
 	}
-	//cprintf("kern/syscall.c [sys_ipc_try_send] ...\n");
 	e->env_ipc_recving=0;
 	e->env_ipc_from=curenv->env_id;
 	e->env_ipc_value=value;
@@ -436,6 +441,8 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 			return sys_page_unmap(a1, (void *)a2);
 		case SYS_env_set_pgfault_upcall:
 			return sys_env_set_pgfault_upcall(a1,(void *)a2);
+		case SYS_env_set_priority:
+			return sys_env_set_priority(a1,a2);
 		case SYS_ipc_try_send:
 			return sys_ipc_try_send(a1,a2,(void *)a3,a4);
 		case SYS_ipc_recv:

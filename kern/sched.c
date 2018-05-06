@@ -35,11 +35,14 @@ sched_yield(void)
 		env_id=curenv->env_id;
 	else
 		env_id=0;
+	struct Env *env=NULL;
 	for(i=(env_id+1)%NENV;i!=env_id%NENV;i=(i+1)%NENV)
 	{
-		if(envs[i].env_type!=ENV_TYPE_IDLE&&envs[i].env_status==ENV_RUNNABLE)
-			env_run(&envs[i]);
+		if(envs[i].env_type!=ENV_TYPE_IDLE&&envs[i].env_status==ENV_RUNNABLE&&(env==NULL||envs[i].env_priority>env->env_priority))
+			env=&envs[i];
 	}
+	if(env)
+		env_run(env);
 	if(curenv&&curenv->env_type!=ENV_TYPE_IDLE&&curenv->env_status==ENV_RUNNING)
 		env_run(&envs[i]);
 
