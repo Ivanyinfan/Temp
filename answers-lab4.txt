@@ -1,0 +1,11 @@
+Question 1
+MPBOOTPHYS用于把虚拟地址转换成物理地址。由于AP没有设置页表，而BSP开启了页表，所以需要自己从虚拟地址转换到物理地址。
+
+Question 2
+因为不同的CPU在内核上会保留不同的信息。如果只有一个栈，一个CPU在处理的时候另一个CPU发生中断栈就会被破坏，因为trap会立即往栈上存数据
+
+Question 3
+因为这个值是保存在内核栈上的，而内核页表和用户页表在UTOP（除了UVPT）以上都是一样的，所以cr3变化不会有影响。
+
+Challenge
+实现优先级调度。在struct Env中添加一个变量env_priority表示每个Env的优先级。修改sched_yield使得每次在可运行的env中选择优先级最高的。修改inc/syscall.h、lib/syscall.c、和kern/syscall.c添加系统调用sys_env_set_priority用于修改进程的优先级，具体实现与之前类似，先根据envid找到对应的env，再将priority修改为设定的值。
