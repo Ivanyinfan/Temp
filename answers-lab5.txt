@@ -1,0 +1,5 @@
+Queation 1:How long approximately did it take you to do this lab?
+答：一周时间。换成连续时间大概12个小时。
+
+Challenge
+实现内存evict。在fs/bc.c中新增bc_evict。算法与实现LRU的时钟算法类似，有一个全局指针遍历这个映射区域。指针依次移动，把沿途映射过的PTE_A位被置上的取消PTE_A位。遇到第一个映射了且PTE_A位没有被置上的页就是驱逐出去的页。如果这个页是dirty的，flush到disk。

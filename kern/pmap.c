@@ -11,6 +11,7 @@
 #include <kern/kclock.h>
 #include <kern/env.h>
 #include <kern/cpu.h>
+#include <kern/monitor.h>
 
 // These variables are set by i386_detect_memory()
 size_t npages;			// Amount of physical memory (in pages)
@@ -183,7 +184,7 @@ mem_init(void)
 	//      (ie. perm = PTE_U | PTE_P)
 	//    - pages itself -- kernel RW, user NONE
 	// Your code goes here:
-	boot_map_region(kern_pgdir,UPAGES,ROUNDUP(npages*sizeof(struct Page),PGSIZE),PADDR(pages),PTE_W);
+	boot_map_region(kern_pgdir,UPAGES,ROUNDUP(npages*sizeof(struct Page),PGSIZE),PADDR(pages),PTE_U);
 
 	//////////////////////////////////////////////////////////////////////
 	// Map the 'envs' array read-only by the user at linear address UENVS
@@ -514,33 +515,7 @@ int
 page_insert(pde_t *pgdir, struct Page *pp, void *va, int perm)
 {
 	// Fill this function in
-	//cprintf("kern/pmap.c [page_insert] pgdir=%p,va=%p\n",pgdir,va);
-	/*pte_t *pte=pgdir_walk(pgdir,va,0);
-	physaddr_t pp_pa=page2pa(pp);
-	if(pte==NULL)
-	{
-		struct Page *page=page_alloc(1);
-		if(page==NULL)
-			return -E_NO_MEM;
-		page->pp_ref++;
-		physaddr_t pa=page2pa(page);
-		pgdir[PDX(va)]=pa|perm|PTE_P;
-		((pte_t *)KADDR(pa))[PTX(va)]=PTE_ADDR(pp_pa)|perm|PTE_P;
-		pp->pp_ref++;
-	}
-	else
-	{
-		if(*pte==(PTE_ADDR(pp_pa)|perm|PTE_P))
-			return 0;
-		if(PTE_ADDR(*pte)!=PTE_ADDR(pp_pa))
-		{
-			page_remove(pgdir,va);
-			pp->pp_ref++;
-		}
-		*pte=PTE_ADDR(pp_pa)|perm|PTE_P;
-		pgdir[PDX(va)]=PTE_ADDR(pgdir[PDX(va)])|perm|PTE_P;
-	}
-	return 0;*/
+	//cprintf("kern/pmap.c [page_insert] pgdir=%p,va=%p,perm=%d\n",pgdir,va,perm);
 	pte_t *pte=pgdir_walk(pgdir,va,perm|PTE_P);
 	if(pte==NULL)
 		return -E_NO_MEM;

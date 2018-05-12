@@ -69,7 +69,22 @@ open(const char *path, int mode)
 	// file descriptor.
 
 	// LAB 5: Your code here.
-	panic("open not implemented");
+	int len=strlen(path);
+	if(len>MAXPATHLEN)
+		return -E_BAD_PATH;
+	struct Fd *fd;
+	int r=fd_alloc(&fd);
+	if(r)
+		return r;
+	memmove(fsipcbuf.open.req_path,path,len+1);
+	fsipcbuf.open.req_omode=mode;
+	r=fsipc(FSREQ_OPEN,fd);
+	if(r)
+	{
+		fd_close(fd,0);
+		return r;
+	}
+	return fd2num(fd);
 }
 
 // Flush the file descriptor.  After this the fileid is invalid.
@@ -100,7 +115,13 @@ devfile_read(struct Fd *fd, void *buf, size_t n)
 	// bytes read will be written back to fsipcbuf by the file
 	// system server.
 	// LAB 5: Your code here
-	panic("devfile_read not implemented");
+	fsipcbuf.read.req_fileid=fd->fd_file.id;
+	fsipcbuf.read.req_n=n;
+	int r=fsipc(FSREQ_READ,NULL);
+	if(r<0)
+		return r;
+	memmove(buf,fsipcbuf.readRet.ret_buf,r);
+	return r;
 }
 
 // Write at most 'n' bytes from 'buf' to 'fd' at the current seek position.
@@ -116,7 +137,10 @@ devfile_write(struct Fd *fd, const void *buf, size_t n)
 	// remember that write is always allowed to write *fewer*
 	// bytes than requested.
 	// LAB 5: Your code here
-	panic("devfile_write not implemented");
+	fsipcbuf.write.req_fileid=fd->fd_file.id;
+	fsipcbuf.write.req_n=MIN(n,PGSIZE);
+	memmove(fsipcbuf.write.req_buf,buf,MIN(n,PGSIZE));
+	return fsipc(FSREQ_WRITE,NULL);
 }
 
 static int
