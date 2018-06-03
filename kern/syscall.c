@@ -11,6 +11,7 @@
 #include <kern/syscall.h>
 #include <kern/console.h>
 #include <kern/sched.h>
+#include <kern/time.h>
 #include <kern/spinlock.h>
 
 // Print a string to the system console.
@@ -430,6 +431,15 @@ int32_t Syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint3
 	unlock_kernel();
 	return r;
 }
+
+// Return the current time.
+static int
+sys_time_msec(void)
+{
+	// LAB 6: Your code here.
+	panic("sys_time_msec not implemented");
+}
+
 
 // Dispatches to the correct kernel function, passing the arguments.
 int32_t

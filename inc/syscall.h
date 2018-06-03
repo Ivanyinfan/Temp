@@ -23,6 +23,7 @@ enum {
 	SYS_ipc_recv,
 
 	SYS_sbrk,
+	SYS_time_msec,
 	NSYSCALLS
 };
 
