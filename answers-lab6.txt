@@ -1,0 +1,16 @@
+Question 1. How did you structure your transmit implementation? In particular, what do you do if the transmit ring is full?
+答：定义全局变量tx_queue、tx_pkt_buffer作为发送、接收的队列和包缓存。大小均为固定。如果transmit ring满了，返回E_TX_FULL错误。交由上层处理。所以在output函数中会不断尝试，因为系统调用两层均不处理。
+
+Question 2. How did you structure your receive implementation? In particular, what do you do if the receive queue is empty and a user environment requests the next incoming packet?
+答：定义全局变量rx_queue、rx_pkt_buffer作为接收的队列和包缓存。大小均为固定。如果receive queue是空的，则返回E_RX_EMPTY错误交给上层处理。同样的，系统调用两层不处理。在input函数中会不断尝试。
+
+Question 3.What does the web page served by JOS's web server say?
+答：其实为fs/index.html中的内容。具体是：
+This file came from JOS.
+Cheesy web page!
+
+Question 4. How long approximately did it take you to do this lab?
+答：两周。
+
+Challenge
+从EEPROM总读取MAC地址。添加e1000_mac_eeprom函数和uint8_t e1000_mac[6];全局变量。e1000_mac_eeprom用EEPROM读寄存器每次读取一个word。首先设置EERD.ADDR和EERD.START位，等待EERD.DONE位被设置并读取到e1000_mac中，重复三次即可。添加系统调用sys_load_mac用于读取mac地址。设置两个无符号数分别从e1000+E1000_RAL和e1000+E1000_RAH中读取即可。

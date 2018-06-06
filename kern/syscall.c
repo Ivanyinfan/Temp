@@ -13,6 +13,7 @@
 #include <kern/sched.h>
 #include <kern/time.h>
 #include <kern/spinlock.h>
+#include <kern/e1000.h>
 
 // Print a string to the system console.
 // The string is exactly 'len' characters long.
@@ -437,9 +438,26 @@ static int
 sys_time_msec(void)
 {
 	// LAB 6: Your code here.
-	panic("sys_time_msec not implemented");
+	return time_msec();
 }
 
+static int sys_net_try_send(char *data, int len)
+{
+	//cprintf("kern/syscall.c [sys_net_try_send] len=%d\n",len); 
+	return e1000_transmit(data,len);
+}
+
+static int sys_net_recv(char *data)
+{
+	return e1000_receive(data);
+}
+
+static int sys_load_mac(uint32_t *low,uint32_t *high)
+{
+	*low = e1000[E1000_RAL];
+	*high = e1000[E1000_RAH];
+	return 0;
+}
 
 // Dispatches to the correct kernel function, passing the arguments.
 int32_t
@@ -485,6 +503,14 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 			return sys_ipc_recv((void *)a1);
 		case SYS_env_set_trapframe:
 			return sys_env_set_trapframe(a1,(struct Trapframe *)a2);
+		case SYS_time_msec:
+			return sys_time_msec();
+		case SYS_net_try_send:
+			return sys_net_try_send((char *)a1,a2);
+		case SYS_net_recv:
+			return sys_net_recv((char *)a1);
+		case SYS_load_mac:
+			return sys_load_mac((uint32_t *)a1,(uint32_t *)a2);
         default:
             return -E_INVAL;
     }

@@ -158,3 +158,17 @@ sys_time_msec(void)
 	return (unsigned int) syscall(SYS_time_msec, 0, 0, 0, 0, 0, 0);
 }
 
+int sys_net_try_send(char *buf,int len)
+{
+	return syscall(SYS_net_try_send,1,(uint32_t)buf,len,0,0,0);
+}
+
+int sys_net_recv(char *data)
+{
+	return syscall(SYS_net_recv,0,(uint32_t)data,0,0,0,0);
+}
+
+int sys_load_mac(uint32_t *low,uint32_t *high)
+{
+	return syscall(SYS_load_mac,0,(uint32_t)low,(uint32_t)high,0,0,0);
+}
