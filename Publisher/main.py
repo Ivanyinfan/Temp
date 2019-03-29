@@ -3,30 +3,40 @@ import pika
 import config
 import cx_Oracle
 
-PREFIX = 'R_SD_'
-
 
 class DatabaseServer():
-    def __init__(self, dbPara):
-        self.prefix = PREFIX
+    def __init__(self, dbPara, prefix='R_SD_'):
+        self.prefix = prefix
         self.con = cx_Oracle.connect(**dbPara)
         self.cursor = self.con.cursor()
 
+    def addTable(self, tableName):
+        print('[DatabaseServer][addTable]tableName='+tableName)
+        sTableName = self.prefix + tableName
+        re = self.__tableExist__(sTableName)
+        print('[DatabaseServer][addTable]tableExist='+str(re))
+        if re == False:
+            self.__addShadowTable__(tableName)
+
+    def __tableExist__(self, tableName):
+        sql = 'select count(*) from user_tables where table_name=:tablename'
+        self.cursor.execute(sql, tableName=str.upper(tableName))
+        re = self.cursor.fetchone()
+        return re[0] != 0
+
     def __addShadowTable__(self, tableName):
-        stn = self.prefix + tableName
-        sql = 'CREATE TABLE ' + stn + \
-              '( \
-                    Rep_sync_id NUMBER \
-               )'
+        sTableName = self.prefix + tableName
+        sql = 'create table ' + sTableName + \
+            ' as select * from ' + tableName + ' where 1=2'
+        self.cursor.execute(sql)
+        sql = 'alter table ' + sTableName + ' add (REP_SYNC_ID number)'
+        self.cursor.execute(sql)
+        sql = 'alter table ' + sTableName + \
+            ' add (REP_OPERATIONTYPE CHAR(1 BYTE))'
         self.cursor.execute(sql)
 
     def __addTigger__(self, tableName):
         pass
-
-    def addTable(self, tableName):
-        print('[DatabaseServer][addTable]tableName='+tableName)
-        self.__addShadowTable__(tableName)
-        self.__addTigger__(tableName)
 
 
 class Publiser():
@@ -57,17 +67,27 @@ command = [
 
 def main():
     db = DatabaseServer(config.database)
-    pub = Publiser(config.pika)
-    while True:
-        cmd = input('> ')
-        cmd = cmd.split(' ')
-        for c in command:
-            if c[0] == cmd[0]:
-                if len(cmd) != c[1]+1:
-                    print(c[3])
-                    exit
-                c[2](db, pub, cmd[1:])
-                break
+    #pub = Publiser(config.pika)
+    pub = None
+    cmd = 'addtable test'
+    cmd = cmd.split(' ')
+    for c in command:
+        if c[0] == cmd[0]:
+            if len(cmd) != c[1]+1:
+                print(c[3])
+                exit
+            c[2](db, pub, cmd[1:])
+            break
+    # while True:
+    #     cmd = input('> ')
+    #     cmd = cmd.split(' ')
+    #     for c in command:
+    #         if c[0] == cmd[0]:
+    #             if len(cmd) != c[1]+1:
+    #                 print(c[3])
+    #                 exit
+    #             c[2](db, pub, cmd[1:])
+    #             break
 
 
 if __name__ == '__main__':

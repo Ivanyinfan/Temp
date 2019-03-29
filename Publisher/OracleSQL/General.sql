@@ -48,12 +48,25 @@ alter system set db_files = 400 scope = spfile;
 show parameter spfile;
 create spfile from pfile;
 select table_name from user_tables;
+select count(*) from user_tables where table_name='R_SD_I_ITM_STOREITEM';
+select count(*) from user_tables where table_name='R_SD_TEST';
+select count(*) from all_tables where table_name='R_SD_TEST';
+select count(*) from dba_tables where table_name='R_SD_TEST';
+select owner from dba_tables where table_name='R_SD_TEST';
+select count(*) from user_views where view_name='R_SD_TEST';
+select count(*) from user_triggers where trigger_name='R_SD_TEST';
+select * from all_triggers where table_name='I_ITM_STOREITEM';
 select userenv('language') from dual;
+select dbms_metadata.get_ddl('TABLE','R_SD_TEST') from dual;
 --修改字符集
 alter system enable restricted session;
 alter DATABASE CHARACTER set ZHS16GBK;
 alter DATABASE CHARACTER set INTERNAL_USE ZHS16GBK;
-
+create table C##DEP6.R_SD_test as select * from test where 1=2;
+alter table R_SD_test add (REP_SYNC_ID number);
+alter table R_SD_test add (REP_OPERATIONTYPE CHAR(1 BYTE));
+spool result.txt;
+spool off;
 lsnrctl status
 
 E:\Oracle\Home\database\oradim.log
