@@ -66,7 +66,7 @@ command = [
 
 
 def main():
-    db = DatabaseServer(config.database)
+    db = DatabaseServer(config.oracle)
     #pub = Publiser(config.pika)
     pub = None
     cmd = 'addtable test'

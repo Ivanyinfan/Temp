@@ -11,10 +11,16 @@ dsn = {
     'sid': 'orcl'
 }
 dsn = cx_Oracle.makedsn(**dsn)
-database = {
+oracle = {
     'user': 'C##DEP6',
     'password': '123456',
     'dsn': dsn
+}
+mysql = {
+    'host': '127.0.0.1',
+    'user': 'root',
+    'password': '123456',
+    'database': 'wb2018',
 }
 pika = {
     'host': 'localhost'

@@ -50,7 +50,7 @@ class Subsciber():
 def main():
     subsciber = Subsciber(config.PIKACONFIG, 'test.*')
     # subsciber.receive()
-    dbserver = DatabaseServer(config.DATABASECONFIG)
+    dbserver = DatabaseServer(config.mysql)
     dbserver.receive('')
 
 
