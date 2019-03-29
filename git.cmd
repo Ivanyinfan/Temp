@@ -10,7 +10,7 @@ git rebase master
 git fetch
 git pull --allow-unrelated-histories
 git status
-git add
+git add --update
 git reset
 git commit -m
 git push -f
