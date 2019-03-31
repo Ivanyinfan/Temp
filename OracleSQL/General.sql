@@ -49,15 +49,19 @@ show parameter spfile;
 create spfile from pfile;
 select table_name from user_tables;
 select count(*) from user_tables where table_name='R_SD_I_ITM_STOREITEM';
+select count(*) from user_tables where table_name='TEST';
 select count(*) from user_tables where table_name='R_SD_TEST';
 select count(*) from all_tables where table_name='R_SD_TEST';
 select count(*) from dba_tables where table_name='R_SD_TEST';
 select owner from dba_tables where table_name='R_SD_TEST';
 select count(*) from user_views where view_name='R_SD_TEST';
 select count(*) from user_triggers where trigger_name='R_SD_TEST';
+select count(*) from user_sequences where sequence_name='S_R_SD_TEST';
 select * from all_triggers where table_name='I_ITM_STOREITEM';
 select userenv('language') from dual;
 select dbms_metadata.get_ddl('TABLE','R_SD_TEST') from dual;
+select dbms_metadata.get_ddl('TABLE','USER_TAB_COLUMNS') from dual;
+select dbms_metadata.get_ddl('TRIGGER','HBL_BALANCE_CHARGE_T') from dual;
 --修改字符集
 alter system enable restricted session;
 alter DATABASE CHARACTER set ZHS16GBK;
@@ -65,10 +69,30 @@ alter DATABASE CHARACTER set INTERNAL_USE ZHS16GBK;
 create table C##DEP6.R_SD_test as select * from test where 1=2;
 alter table R_SD_test add (REP_SYNC_ID number);
 alter table R_SD_test add (REP_OPERATIONTYPE CHAR(1 BYTE));
-spool result.txt;
+alter trigger HBL_BALANCE_CHARGE_T disable;
+--锁定表
+lock table R_SD_test in exclusive mode;
+--杀死进程解锁表
+select ORACLE_USERNAME, LOCKED_MODE from v$locked_object;
+select a.object_name,b.session_id,c.serial#,c.program,c.username,c.command,c.machine,c.lockwait
+from all_objects a,v$locked_object b,v$session c
+where a.object_id=b.object_id and c.sid=b.session_id and a.object_name='R_SD_TEST';
+alter system kill session '21,51638';
+select * from USER_TAB_COLUMNS where rownum<=10;
+select COLUMN_NAME from USER_TAB_COLUMNS where TABLE_NAME='R_SD_TEST';
+
+show long
+set long 300
+show line
+set line 100
+col ORACLE_USERNAME for a10
+show error
+
+spool test.txt;
 spool off;
 lsnrctl status
 
+--重要文件位置
 E:\Oracle\Home\database\oradim.log
 E:\ORACLE\HOME\DATABASE\SPFILEORCL.ORA
 E:\Oracle\Base\diag\tnslsnr\BF-201708291113\listener\trace\listener.log

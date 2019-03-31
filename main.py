@@ -1,74 +1,39 @@
 #!/usr/bin/env python
 import pika
 import config
-import cx_Oracle
+import MQServer
+import DatabaseServer
 
 
-class DatabaseServer():
-    def __init__(self, dbPara, prefix='R_SD_'):
-        self.prefix = prefix
-        self.con = cx_Oracle.connect(**dbPara)
-        self.cursor = self.con.cursor()
+class Publisher():
+    def __init__(self):
+        self.db = DatabaseServer.DatabaseServer(config.oracle)
+        self.sen = MQServer.Sender(config.pika, self.pub_callback)
 
-    def addTable(self, tableName):
-        print('[DatabaseServer][addTable]tableName='+tableName)
-        sTableName = self.prefix + tableName
-        re = self.__tableExist__(sTableName)
-        print('[DatabaseServer][addTable]tableExist='+str(re))
-        if re == False:
-            self.__addShadowTable__(tableName)
+    def pub_addTable(self, tableName):
+        self.db.addTable(tableName)
 
-    def __tableExist__(self, tableName):
-        sql = 'select count(*) from user_tables where table_name=:tablename'
-        self.cursor.execute(sql, tableName=str.upper(tableName))
-        re = self.cursor.fetchone()
-        return re[0] != 0
-
-    def __addShadowTable__(self, tableName):
-        sTableName = self.prefix + tableName
-        sql = 'create table ' + sTableName + \
-            ' as select * from ' + tableName + ' where 1=2'
-        self.cursor.execute(sql)
-        sql = 'alter table ' + sTableName + ' add (REP_SYNC_ID number)'
-        self.cursor.execute(sql)
-        sql = 'alter table ' + sTableName + \
-            ' add (REP_OPERATIONTYPE CHAR(1 BYTE))'
-        self.cursor.execute(sql)
-
-    def __addTigger__(self, tableName):
+    def sub_addTable(self, tableName):
         pass
 
-
-class Publiser():
-    def __init__(self, pikaPara):
-        pikaConPara = pika.ConnectionParameters(**pikaPara)
-        exchangePara = {'exchange': 'test', 'exchange_type': 'topic'}
-        self.connection = pika.BlockingConnection(pikaConPara)
-        self.channel = self.connection.channel()
-        self.exchange = self.channel.exchange_declare(**exchangePara)
-
-    def send(self, data):
-        pubPara = {
-            'exchange': 'test',
-            'routing_key': 'test.test',
-            'body': data
-        }
-        self.channel.basic_publish(**pubPara)
+    def pub_callback(self, channel, method, properties, body):
+        print(" [x] %r:%r" % (method.routing_key, body))
+        if not self.sen.judgeCorID(properties.correlation_id):
+            return
+        self.db.sub_addTable(body)
 
 
-def addTable(db, pub, tableName):
-    db.addTable(tableName[0])
+def pub_addTable(pub, args):
+    pub.pub_addTable(args[0])
 
 
 command = [
-    ['addtable', 1, addTable, 'USEAGE: addtable tableName']
+    ['addtable', 1, pub_addTable, 'USEAGE: addtable tableName']
 ]
 
 
 def main():
-    db = DatabaseServer(config.oracle)
-    #pub = Publiser(config.pika)
-    pub = None
+    pub = Publisher()
     cmd = 'addtable test'
     cmd = cmd.split(' ')
     for c in command:
@@ -76,7 +41,7 @@ def main():
             if len(cmd) != c[1]+1:
                 print(c[3])
                 exit
-            c[2](db, pub, cmd[1:])
+            c[2](pub, cmd[1:])
             break
     # while True:
     #     cmd = input('> ')
