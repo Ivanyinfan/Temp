@@ -55,7 +55,13 @@ select count(*) from all_tables where table_name='R_SD_TEST';
 select count(*) from dba_tables where table_name='R_SD_TEST';
 select owner from dba_tables where table_name='R_SD_TEST';
 select count(*) from user_views where view_name='R_SD_TEST';
-select count(*) from user_triggers where trigger_name='R_SD_TEST';
+col TRIGGER_NAME for a12
+col TRIGGERING_EVENT for a16
+col TABLE_OWNER for a11
+col TABLE_NAME for a10
+col DESCRIPTION for a11
+select * from user_triggers where trigger_name='I_TEST';
+select TRIGGER_NAME, TABLE_NAME, STATUS from user_triggers where trigger_name='I_TEST';
 select count(*) from user_sequences where sequence_name='S_R_SD_TEST';
 select * from all_triggers where table_name='I_ITM_STOREITEM';
 select userenv('language') from dual;

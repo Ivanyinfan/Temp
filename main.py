@@ -11,7 +11,7 @@ class Publisher():
         self.sen = MQServer.Sender(config.pika, self.pub_callback)
 
     def pub_addTable(self, tableName):
-        self.db.addTable(tableName)
+        self.db.pub_addTable(tableName)
 
     def sub_addTable(self, tableName):
         pass
