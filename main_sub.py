@@ -1,30 +1,46 @@
 #!/usr/bin/env python
-import pika
 import config
-import mysql.connector
+import PubSub
 
 
-class DatabaseServer():
-    def __init__(self, dbPara):
-        self.cnx = mysql.connector.connect(**dbPara)
-        self.cursor = self.cnx.cursor()
+def pub_addTable(pub, sub, args):
+    pub.pub_addTable(args[0])
 
-    def __parseData__(self, data):
-        return data
 
-    def receive(self, data):
-        data = self.__parseData__(data)
-        self.cursor.execute('SELECT * FROM device')
-        rows = self.cursor.fetchall()
-        print(rows)
+def sub_addTable(pub, sub, args):
+    sub.addTable(args[0])
+
+
+command = [
+    ['pubAddTable', 1, pub_addTable, 'USEAGE: pubAddTable tableName'],
+    ['subAddTable', 1, sub_addTable, 'USEAGE: subAddTable tableName']
+]
 
 
 def main():
-    subsciber = Subsciber(config.PIKACONFIG, 'test.*')
-    # subsciber.receive()
-    dbserver = DatabaseServer(config.mysql)
-    dbserver.receive('')
+    # pub = PubSub.Publisher()
+    pub = None
+    sub = PubSub.Subscriber()
+    cmd = 'subAddTable test'
+    cmd = cmd.split(' ')
+    for c in command:
+        if c[0] == cmd[0]:
+            if len(cmd) != c[1]+1:
+                print(c[3])
+                exit
+            c[2](pub, sub, cmd[1:])
+            break
+    # while True:
+    #     cmd = input('> ')
+    #     cmd = cmd.split(' ')
+    #     for c in command:
+    #         if c[0] == cmd[0]:
+    #             if len(cmd) != c[1]+1:
+    #                 print(c[3])
+    #                 exit
+    #             c[2](db, pub, cmd[1:])
+    #             break
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

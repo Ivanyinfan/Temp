@@ -1,8 +1,9 @@
 import config
 import cx_Oracle
+import mysql.connector
 
 
-class DatabaseServer():
+class OracleDatabaseServer():
     def __init__(self, dbPara, shaPrefix='R_SD_', seqPrefix='S_'):
         self.shaPrefix = shaPrefix
         self.seqPrefix = seqPrefix
@@ -21,9 +22,14 @@ class DatabaseServer():
 
     def sub_addTable(self, tableName):
         sTableName = self.shaPrefix + tableName
-        if not self.__tiggerOnTableExist__(sTableName):
-            self.__lockTable__(tableName)
-            self.__addTigger(tableName)
+        data = list()
+        if not self.__tableExist(sTableName):
+            return data, -1
+        self.__lockTable(tableName)
+        id = self.__getMaxId(sTableName)
+        data = self.__getData(tableName)
+        self.__unlockTable(tableName)
+        return data, id
 
     def __tableExist(self, tableName):
         sql = 'select count(*) from user_tables where table_name=:tablename'
@@ -49,17 +55,17 @@ class DatabaseServer():
             CACHE 20 NOORDER  NOCYCLE  NOKEEP  NOSCALE  GLOBAL'
         self.cursor.execute(sql)
 
-    def __tiggerOnTableExist__(self, tableName):
+    def __tiggerOnTableExist(self, tableName):
         sql = 'select count(*) from user_triggers where table_name=:tableName'
         self.cursor.execute(sql, tableName=tableName)
         re = self.cursor.fetchone
         return re[0] != 0
 
-    def __lockTable__(self, tableName):
+    def __lockTable(self, tableName):
         sql = 'lock table ' + tableName + ' in exclusive mode'
         self.cursor.execute(sql)
 
-    def __unlockTable__(self, tableName):
+    def __unlockTable(self, tableName):
         sql = 'commit'
         self.cursor.execute(sql)
 
@@ -116,3 +122,27 @@ class DatabaseServer():
         sql = sql+seqName+".nextVal,'U');end;"
         print(sql)
         self.cursor.execute(sql)
+
+    def __getMaxId(self, sTableName):
+        sql = 'select max(REP_SYNC_ID) from '+sTableName
+        self.cursor.execute(sql)
+        return self.cursor.fetchone()[0]
+
+    def __getData(self, tableName):
+        sql = "select * from "+tableName
+        self.cursor.execute(sql)
+        return self.cursor.fetchall()
+
+
+class MySQLDatabaseServer():
+    def __init__(self, dbPara):
+        self.con = mysql.connector.connect(**dbPara)
+
+    def getAllData(self, tableName, data):
+        print('[_MySQLDatabaseServer_getAllData]tableName=%s' % (tableName))
+        print('data=%s' % (data))
+        for d in data:
+            pass
+
+    def updateData(self, tableName, data):
+        pass

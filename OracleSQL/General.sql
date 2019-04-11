@@ -86,6 +86,7 @@ where a.object_id=b.object_id and c.sid=b.session_id and a.object_name='R_SD_TES
 alter system kill session '21,51638';
 select * from USER_TAB_COLUMNS where rownum<=10;
 select COLUMN_NAME from USER_TAB_COLUMNS where TABLE_NAME='R_SD_TEST';
+select max(REP_SYNC_ID) from R_SD_TEST;
 
 show long
 set long 300
