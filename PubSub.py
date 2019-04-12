@@ -28,6 +28,9 @@ class Publisher():
     def __listenSub(self):
         self.sen.startConsuming()
 
+    def __publishUpdate(self, tableName):
+        pass
+
 
 class Subscriber():
     def __init__(self, dbName='MySQL'):

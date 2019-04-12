@@ -137,12 +137,24 @@ class OracleDatabaseServer():
 class MySQLDatabaseServer():
     def __init__(self, dbPara):
         self.con = mysql.connector.connect(**dbPara)
+        self.cursor = self.con.cursor()
 
     def getAllData(self, tableName, data):
         print('[_MySQLDatabaseServer_getAllData]tableName=%s' % (tableName))
-        print('data=%s' % (data))
-        for d in data:
-            pass
+        sql = 'select column_name from information_schema.columns where table_name=%s'
+        self.cursor.execute(sql, (tableName,))
+        column = tuple()
+        next = self.cursor.fetchone()
+        while next != None:
+            column = column+next
+            next = self.cursor.fetchone()
+        length = len(column)
+        values = ('%s',)*length
+        column = str(column).replace("'", "")
+        values = str(values).replace("'", "")
+        sql = "insert into test "+column+" values "+values
+        print('[_MySQLDatabaseServer_getAllData]sql=%s' % (sql))
+        self.cursor.executemany(sql, data)
 
     def updateData(self, tableName, data):
         pass
