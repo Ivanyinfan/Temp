@@ -18,8 +18,8 @@ command = [
 
 
 def main():
-    pub = PubSub.Publisher()
     sub = None
+    pub = PubSub.Publisher()
     # sub = PubSub.Subscriber()
     # cmd = 'pubAddTable test'
     # cmd = cmd.split(' ')

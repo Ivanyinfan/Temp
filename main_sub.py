@@ -18,8 +18,9 @@ command = [
 
 
 def main():
-    # pub = PubSub.Publisher()
     pub = None
+    sub = None
+    # pub = PubSub.Publisher()
     sub = PubSub.Subscriber()
     cmd = 'subAddTable test'
     cmd = cmd.split(' ')

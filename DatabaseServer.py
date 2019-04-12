@@ -3,12 +3,20 @@ import cx_Oracle
 import mysql.connector
 
 
+def DatabaseServer(name):
+    name = str.upper(name)
+    if name == 'ORACLE':
+        return OracleDatabaseServer(config.oracle)
+    if name == 'MYSQL':
+        return MySQLDatabaseServer(config.mysql)
+
+
 class OracleDatabaseServer():
     def __init__(self, dbPara, shaPrefix='R_SD_', seqPrefix='S_'):
         self.shaPrefix = shaPrefix
         self.seqPrefix = seqPrefix
-        self.con = cx_Oracle.connect(**dbPara)
-        self.cursor = self.con.cursor()
+        con = cx_Oracle.connect(**dbPara)
+        self.cursor = con.cursor()
 
     def pub_addTable(self, tableName):
         print('[DatabaseServer][addTable]tableName='+tableName)
@@ -136,8 +144,8 @@ class OracleDatabaseServer():
 
 class MySQLDatabaseServer():
     def __init__(self, dbPara):
-        self.con = mysql.connector.connect(**dbPara)
-        self.cursor = self.con.cursor()
+        MySQLDatabaseServer.con = mysql.connector.connect(**dbPara)
+        self.cursor = MySQLDatabaseServer.con.cursor()
 
     def getAllData(self, tableName, data):
         print('[_MySQLDatabaseServer_getAllData]tableName=%s' % (tableName))

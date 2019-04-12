@@ -12,11 +12,6 @@ class Sender():
         self.connection = pika.BlockingConnection(pikaConPara)
         self.channel = self.connection.channel()
         self.exchange = self.channel.exchange_declare(**exchangePara)
-        self.subscribe = self.channel.queue_declare(SUBTOPUBQUE)
-        self.channel.basic_consume(
-            queue=self.subscribe.method.queue, consumer_callback=callback)
-        self.thread = threading.Thread(target=self.__listenSub)
-        # self.thread.start()
 
     def send(self, routing_key, data):
         print('[_Sender_send]routing_key=%s' % (routing_key))
@@ -28,13 +23,25 @@ class Sender():
         self.channel.basic_publish(**pubPara)
 
     def startConsuming(self):
+        print('[_Sender_startConsuming]...')
         self.channel.start_consuming()
 
     def judgeCorID(self, id):
         return id == CORRELATION_ID
 
-    def __listenSub(self):
-        print('[_Sender__listenSub]start_consuming')
+
+class SenderSub(Sender):
+    def __init__(self, pikaPara, callback):
+        pikaConPara = pika.ConnectionParameters(**pikaPara)
+        self.connection = pika.BlockingConnection(pikaConPara)
+        self.channel = self.connection.channel()
+        self.subscribe = self.channel.queue_declare(SUBTOPUBQUE)
+        print(self.subscribe)
+        self.channel.basic_consume(
+            queue=self.subscribe.method.queue, consumer_callback=callback)
+
+    def listenSub(self):
+        print('[_Sender_listenSub]...')
         self.channel.start_consuming()
 
 
