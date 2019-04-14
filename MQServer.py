@@ -6,7 +6,7 @@ CORRELATION_ID = str(20190329)
 
 
 class Sender():
-    def __init__(self, pikaPara, callback):
+    def __init__(self, pikaPara):
         pikaConPara = pika.ConnectionParameters(**pikaPara)
         exchangePara = {'exchange': 'test', 'exchange_type': 'topic'}
         self.connection = pika.BlockingConnection(pikaConPara)
@@ -36,7 +36,6 @@ class SenderSub(Sender):
         self.connection = pika.BlockingConnection(pikaConPara)
         self.channel = self.connection.channel()
         self.subscribe = self.channel.queue_declare(SUBTOPUBQUE)
-        print(self.subscribe)
         self.channel.basic_consume(
             queue=self.subscribe.method.queue, consumer_callback=callback)
 

@@ -4,6 +4,7 @@ import PubSub
 
 
 def pub_addTable(pub, sub, args):
+    print('[pub_addTable]tableName='+args[0])
     pub.pub_addTable(args[0])
 
 
@@ -18,18 +19,20 @@ command = [
 
 
 def main():
+    pub = None
     sub = None
     pub = PubSub.Publisher()
     # sub = PubSub.Subscriber()
-    # cmd = 'pubAddTable test'
-    # cmd = cmd.split(' ')
-    # for c in command:
-    #     if c[0] == cmd[0]:
-    #         if len(cmd) != c[1]+1:
-    #             print(c[3])
-    #             exit
-    #         c[2](pub, sub, cmd[1:])
-    #         break
+    # PubSub.Publisher()
+    cmd = 'pubAddTable test'
+    cmd = cmd.split(' ')
+    for c in command:
+        if c[0] == cmd[0]:
+            if len(cmd) != c[1]+1:
+                print(c[3])
+                exit
+            c[2](pub, sub, cmd[1:])
+            break
     # while True:
     #     cmd = input('> ')
     #     cmd = cmd.split(' ')
