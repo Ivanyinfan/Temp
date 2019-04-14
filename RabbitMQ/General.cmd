@@ -1,0 +1,3 @@
+rabbitmqctl list_queues
+rabbitmqctl purge_queue SUBSCRIBE
+rabbitmqctl list_bindings
