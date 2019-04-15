@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 # Copyright Ivan_yin 2019.3.26
 # All rights reserved
 import re
