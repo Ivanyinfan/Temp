@@ -166,6 +166,10 @@ class OracleDatabaseServer():
         sql = 'commit'
         self.cursor.execute(sql)
 
+    def __del__(self):
+        self.cursor.close()
+        self.con.close()
+
 
 class MySQLDatabaseServer():
     def __init__(self, dbPara):
@@ -263,3 +267,7 @@ class MySQLDatabaseServer():
                     '[_MySQLDatabaseServer_updateData]ERROR: undefined operation type')
                 return -3
         return 0
+
+    def __del__(self):
+        self.cursor.close()
+        self.con.close()
