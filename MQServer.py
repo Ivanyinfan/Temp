@@ -12,12 +12,14 @@ class Sender():
         self.connection = pika.BlockingConnection(pikaConPara)
         self.channel = self.connection.channel()
         self.exchange = self.channel.exchange_declare(**exchangePara)
+        self.properties = pika.BasicProperties(delivery_mode=2)
 
     def send(self, routing_key, data):
         print('[_Sender_send]routing_key=%s' % (routing_key))
         pubPara = {
             'exchange': 'test',
             'routing_key': routing_key,
+            'properties': self.properties,
             'body': data
         }
         self.channel.basic_publish(**pubPara)
@@ -37,7 +39,7 @@ class SenderSub(Sender):
         self.channel = self.connection.channel()
         self.subscribe = self.channel.queue_declare(SUBTOPUBQUE)
         self.channel.basic_consume(
-            queue=self.subscribe.method.queue, consumer_callback=callback)
+            queue=self.subscribe.method.queue, no_ack=True, consumer_callback=callback)
 
     def listenSub(self):
         print('[_Sender_listenSub]...')
@@ -56,6 +58,8 @@ class Receiver():
         self.queue = self.channel.queue_declare(exclusive=True)
         self.queueName = self.queue.method.queue
         self.channel.basic_consume(callback, queue=self.queueName, no_ack=True)
+        self.properties = pika.BasicProperties(
+            delivery_mode=2, correlation_id=CORRELATION_ID)
 
     def subscibe(self, tableName):
         print('[_Receiver_subscibe]tableName='+tableName)
@@ -66,11 +70,10 @@ class Receiver():
         self.channel.stop_consuming()
 
     def __sendSub(self, tableName):
-        properties = pika.BasicProperties(correlation_id=CORRELATION_ID)
         pubPara = {
             'exchange': '',
             'routing_key': SUBTOPUBQUE,
-            'properties': properties,
+            'properties': self.properties,
             'body': tableName
         }
         self.channel.basic_publish(**pubPara)

@@ -32,6 +32,7 @@ class OracleDatabaseServer():
             self.__addTigger(tableName)
 
     def sub_addTable(self, tableName):
+        print('[Oracle][sub_addTable]tableName='+tableName)
         sTableName = self.shaPrefix + tableName
         data = list()
         if not self.__tableExist(sTableName):
@@ -40,6 +41,7 @@ class OracleDatabaseServer():
         id = self.__getMaxId(sTableName)
         data = self.__getData(tableName)
         self.__unlockTable(tableName)
+        print('[Oracle][sub_addTable]COMPLETE')
         return data, id
 
     def pub_getUpdate(self, tableName):
@@ -48,10 +50,20 @@ class OracleDatabaseServer():
         sql = 'select * from ' + sTableName
         self.cursor.execute(sql)
         update = self.cursor.fetchall()
-        print(update)
+        print('[_OracleDatabaseServer_pub_getUpdate]update='+str(update))
         if len(update) != 0:
             self.__deleteShadowTable(tableName, update[-1][-2])
         return update
+
+    def pub_deleteTable(self, tableName):
+        print('[Oracle][pub_deleteTable]tableName='+tableName)
+        sTableName = self.shaPrefix + tableName
+        seqName = self.seqPrefix + sTableName
+        self.__dropTrigger('I_'+tableName)
+        self.__dropTrigger('D_'+tableName)
+        self.__dropTrigger('D_'+tableName)
+        self.__dropSequence(seqName)
+        self.__dropTable(sTableName)
 
     def __tableExist(self, tableName):
         sql = 'select count(*) from user_tables where table_name=:tablename'
@@ -75,8 +87,10 @@ class OracleDatabaseServer():
             tableName, id))
         sTableName = self.shaPrefix + tableName
         sql = 'delete from ' + sTableName + ' '
-        sql = sql + 'where REP_SYNC_ID<=:id'
+        sql = sql + 'where REP_SYNC_ID <= :id'
         self.cursor.execute(sql, id=id)
+        self.con.commit()
+        # print('[Oracle][deleteShadowTable]COMPLETE')
 
     def __addSequence(self, tableName):
         seqName = self.seqPrefix + tableName
@@ -88,12 +102,15 @@ class OracleDatabaseServer():
     def __tiggerOnTableExist(self, tableName):
         sql = 'select count(*) from user_triggers where table_name=:tableName'
         self.cursor.execute(sql, tableName=tableName)
-        re = self.cursor.fetchone
+        re = self.cursor.fetchone()
         return re[0] != 0
 
     def __lockTable(self, tableName):
+        print('[Oracle][__lockTable]tableName='+tableName)
         sql = 'lock table ' + tableName + ' in exclusive mode'
         self.cursor.execute(sql)
+        self.con.commit()
+        print('[Oracle][__lockTable]COMPLETE')
 
     def __unlockTable(self, tableName):
         self.__commit()
@@ -127,7 +144,6 @@ class OracleDatabaseServer():
         sql = sql+columnStr+'values'
         sql = sql+newRowColStr+","
         sql = sql+seqName+".nextVal,'I');end;"
-        print(sql)
         self.cursor.execute(sql)
         sql = 'CREATE OR REPLACE TRIGGER D_'+tableName+" "
         sql = sql+'AFTER DELETE ON '+tableName+" "
@@ -136,7 +152,6 @@ class OracleDatabaseServer():
         sql = sql+columnStr+'values'
         sql = sql+oldRowColStr+","
         sql = sql+seqName+".nextVal,'D');end;"
-        print(sql)
         self.cursor.execute(sql)
         sql = 'CREATE OR REPLACE TRIGGER U_'+tableName+" "
         sql = sql+'AFTER UPDATE ON '+tableName+" "
@@ -149,10 +164,10 @@ class OracleDatabaseServer():
         sql = sql+columnStr+'values'
         sql = sql+newRowColStr+","
         sql = sql+seqName+".nextVal,'U');end;"
-        print(sql)
         self.cursor.execute(sql)
 
     def __getMaxId(self, sTableName):
+        print('[Oracle][__getMaxId]sTableName='+sTableName)
         sql = 'select max(REP_SYNC_ID) from '+sTableName
         self.cursor.execute(sql)
         return self.cursor.fetchone()[0]
@@ -164,6 +179,19 @@ class OracleDatabaseServer():
 
     def __commit(self):
         sql = 'commit'
+        self.cursor.execute(sql)
+        self.con.commit()
+
+    def __dropTrigger(self, triggerName):
+        sql = 'drop trigger '+triggerName
+        self.cursor.execute(sql)
+
+    def __dropSequence(self, sequenceName):
+        sql = 'drop sequence '+sequenceName
+        self.cursor.execute(sql)
+
+    def __dropTable(self, tableName):
+        sql = 'drop table '+tableName
         self.cursor.execute(sql)
 
     def __del__(self):
@@ -203,14 +231,16 @@ class MySQLDatabaseServer():
         column = str(column).replace("'", "")
         values = str(values).replace("'", "")
         col_val = str(col_val)[1:-1].replace("'", "")
-        print('[_MySQLDatabaseServer__getTableMap]column=%s,values=%s,col_val=%s,colAndVal=%s' % (
-            column, values, col_val, colAndVal))
         result = dict()
         result['column'] = column
         result['values'] = values
         result['col_val'] = col_val
         result['colAndVal'] = colAndVal
         self.tableMap[tableName] = result
+
+    def deleteTable(self, tableName):
+        sql = 'delete from '+tableName
+        self.cursor.execute(sql)
 
     def getAllData(self, tableName, data):
         print('[_MySQLDatabaseServer_getAllData]tableName=%s' % (tableName))

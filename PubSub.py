@@ -7,7 +7,7 @@ import MQServer
 import DatabaseServer
 
 PUBLISHER_DATABASE = "Oracle"
-UPDATE_INTERVAL = 3
+UPDATE_INTERVAL = 5
 
 
 class Publisher():
@@ -15,6 +15,7 @@ class Publisher():
         self.dbName = dbName
         self.db = DatabaseServer.DatabaseServer(dbName)
         self.sen = MQServer.Sender(config.pika)
+        self.tableMap = dict()
         self.thread = threading.Thread(target=self.__listenSub)
         self.thread.start()
 
@@ -22,6 +23,7 @@ class Publisher():
         print('[_Publisher_pub_addTable]tableName'+tableName)
         process = multiprocessing.Process(
             target=pub_addTable, args=(tableName,))
+        self.tableMap[tableName] = process
         process.start()
 
     def pub_callback(self, channel, method, properties, body):
@@ -33,6 +35,11 @@ class Publisher():
         data = {'tableName': tableName, 'type': 0, 'data': data, 'id': id}
         data = str(data)
         self.sen.send(tableName, data)
+
+    def deleteTable(self, tableName):
+        process = self.tableMap[tableName]
+        process.join(1)
+        self.db.pub_deleteTable(tableName)
 
     def __listenSub(self):
         print('[_Publisher__listenSub]...')
@@ -66,9 +73,11 @@ def pub_listenSub(dbName):
         if not senSub.judgeCorID(properties.correlation_id):
             return
         tableName = body.decode()
+        print('[pub_callback]tableName='+tableName)
         data, id = db.sub_addTable(tableName)
         data = {'tableName': tableName, 'type': 0, 'data': data, 'id': id}
         data = str(data)
+        print('[pub_callback]data='+data)
         senSub.send(tableName, data)
 
     db = DatabaseServer.DatabaseServer(dbName)
@@ -89,21 +98,20 @@ def pub_addTable(tableName):
         print('[pub_sendUpdate]tableName='+tableName)
         nonlocal busy, waiting, lock
         lock.acquire()
+        print('[pub_sendUpdate]busy='+str(busy))
         if busy == True:
             lock.release()
             return
-        print('[pub_sendUpdate]tableName='+tableName)
         busy = True
         lock.release()
         update = db.pub_getUpdate(tableName)
         if len(update) != 0:
-            update = str(update)
-            sen.send(tableName, update)
-        if waiting == False:
-            lock.acquire()
-            busy == False
-            lock.release()
-        else:
+            data = {'tableName': tableName, 'type': 1, 'data': update}
+            sen.send(tableName, str(data))
+        lock.acquire()
+        busy = False
+        lock.release()
+        if waiting == True:
             waiting = False
             thread = threading.Thread(target=pub_sendUpdate, args=(tableName,))
             thread.start()
@@ -119,18 +127,21 @@ class Subscriber():
         self.dbName = dbName
         self.db = DatabaseServer.DatabaseServer(dbName)
         self.rec = MQServer.Receiver(config.pika, self.sub_callback)
+        self.tableMap = dict()
         self.id = -1
         self.updated = False
 
     def addTable(self, tableName):
         print('[_Subscriber_addTable]tableName='+tableName)
         thread = threading.Thread(
-            target=self.__subTable, args=(tableName,))
+            target=self.__addTable, args=(tableName,))
+        self.tableMap[tableName] = thread
         thread.start()
 
-    def __subTable(self, tableName):
+    def __addTable(self, tableName):
         db = DatabaseServer.DatabaseServer(self.dbName)
         db.getTableMap(tableName)
+        db.deleteTable(tableName)
         rec = None
         maxId = -1
         updated = False
@@ -168,6 +179,10 @@ class Subscriber():
 
         rec = MQServer.Receiver(config.pika, sub_callback)
         rec.subscibe(tableName)
+
+    def deleteTable(self, tableName):
+        thread = self.tableMap[tableName]
+        thread.join(1)
 
     def sub_callback(self, channel, method, properties, body):
         tableName = method.routing_key
