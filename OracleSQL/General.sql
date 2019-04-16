@@ -79,7 +79,15 @@ alter trigger HBL_BALANCE_CHARGE_T disable;
 --锁定表
 lock table R_SD_test in exclusive mode;
 --杀死进程解锁表
+col ORACLE_USERNAME for a15
+col OS_USER_NAME for a12
+select * from v$locked_object;
 select ORACLE_USERNAME, LOCKED_MODE from v$locked_object;
+col OWNER for a5
+col OBJECT_NAME for a11
+select b.owner,b.object_name,a.session_id,a.locked_mode
+from v$locked_object a,dba_objects b
+where b.object_id = a.object_id;
 select a.object_name,b.session_id,c.serial#,c.program,c.username,c.command,c.machine,c.lockwait
 from all_objects a,v$locked_object b,v$session c
 where a.object_id=b.object_id and c.sid=b.session_id and a.object_name='R_SD_TEST';
