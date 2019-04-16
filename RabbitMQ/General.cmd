@@ -1,3 +1,5 @@
 rabbitmqctl list_queues
+rabbitmqctl list_queues messages_ready messages_unacknowledged
 rabbitmqctl purge_queue SUBSCRIBE
+rabbitmqctl list_exchanges
 rabbitmqctl list_bindings
