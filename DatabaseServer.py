@@ -34,15 +34,14 @@ class OracleDatabaseServer():
     def sub_addTable(self, tableName):
         print('[Oracle][sub_addTable]tableName='+tableName)
         sTableName = self.shaPrefix + tableName
-        data = list()
+        seqName = self.seqPrefix + sTableName
         if not self.__tableExist(sTableName):
-            return data, -1
-        self.__lockTable(tableName)
-        id = self.__getMaxId(sTableName)
+            return None, -1, -1
+        minId = self.__getSequenceNextValue(seqName)
         data = self.__getData(tableName)
-        self.__unlockTable(tableName)
+        maxId = self.__getSequenceNextValue(seqName)
         print('[Oracle][sub_addTable]COMPLETE')
-        return data, id
+        return data, minId, maxId
 
     def pub_getUpdate(self, tableName):
         print('[_OracleDatabaseServer_pub_getUpdate]tableName='+tableName)
@@ -90,7 +89,7 @@ class OracleDatabaseServer():
         sql = sql + 'where REP_SYNC_ID <= :id'
         self.cursor.execute(sql, id=id)
         self.con.commit()
-        # print('[Oracle][deleteShadowTable]COMPLETE')
+        print('[Oracle][deleteShadowTable]COMPLETE')
 
     def __addSequence(self, tableName):
         seqName = self.seqPrefix + tableName
@@ -98,6 +97,11 @@ class OracleDatabaseServer():
             ' MINVALUE 0 MAXVALUE 999999999999999999999999999 INCREMENT BY 1 START WITH 0 \
             CACHE 20 NOORDER  NOCYCLE  NOKEEP  NOSCALE  GLOBAL'
         self.cursor.execute(sql)
+
+    def __getSequenceNextValue(self, seqName):
+        sql = 'select ' + seqName + '.nextval from dual'
+        self.cursor.execute(sql)
+        return self.cursor.fetchone()[0]
 
     def __tiggerOnTableExist(self, tableName):
         sql = 'select count(*) from user_triggers where table_name=:tableName'
@@ -205,6 +209,10 @@ class MySQLDatabaseServer():
         self.cursor = self.con.cursor()
         self.tableMap = dict()
         self.uncompleted = None
+        self.column = None
+        self.values = None
+        self.col_val = None
+        self.colAndVal = None
 
     def getTableMap(self, tableName, force=False):
         if force == True:
@@ -227,15 +235,15 @@ class MySQLDatabaseServer():
         col_val = list()
         for c in column:
             col_val.append(c+'=%s')
-        colAndVal = ' and '.join(col_val)
-        column = str(column).replace("'", "")
-        values = str(values).replace("'", "")
-        col_val = str(col_val)[1:-1].replace("'", "")
+        self.colAndVal = ' and '.join(col_val)
+        self.column = str(column).replace("'", "")
+        self.values = str(values).replace("'", "")
+        self.col_val = str(col_val)[1:-1].replace("'", "")
         result = dict()
-        result['column'] = column
-        result['values'] = values
-        result['col_val'] = col_val
-        result['colAndVal'] = colAndVal
+        result['column'] = self.column
+        result['values'] = self.values
+        result['col_val'] = self.col_val
+        result['colAndVal'] = self.colAndVal
         self.tableMap[tableName] = result
 
     def deleteTable(self, tableName):
@@ -258,24 +266,14 @@ class MySQLDatabaseServer():
             data.insert(0, self.uncompleted)
             self.uncompleted = None
         length = len(data)
-        column = self.tableMap[tableName]['column']
-        values = self.tableMap[tableName]['values']
-        col_val = self.tableMap[tableName]['col_val']
-        colAndVal = self.tableMap[tableName]['colAndVal']
         for i in range(length):
             svalue = data[i]
             operation = svalue[-1]
             value = svalue[:-2]
             if operation == 'I':
-                # insert into test (id,name) values (0,'a')
-                sql = "insert into "+tableName
-                sql = sql+column+" values "+values
-                self.cursor.execute(sql, value)
+                self.__insertOperation(tableName, value)
             elif operation == 'D':
-                # delete from test where id=%s and name=%s
-                sql = "delete from "+tableName+" "
-                sql = sql+"where "+colAndVal
-                self.cursor.execute(sql, value)
+                self.__deleteOperation(tableName, value)
             elif operation == 'U':
                 if i == length-1:
                     self.uncompleted = data[i]
@@ -285,18 +283,77 @@ class MySQLDatabaseServer():
                     if newOp != 'U':
                         print('[_MySQLDatabaseServer_updateData]ERROR')
                         return -2
-                    # update test set id=%s, name=%s where id=%s and name=%s
                     newValue = newSvalue[:-2]
-                    sql = 'update '+tableName+' '
-                    sql = sql+'set '+col_val+' '
-                    sql = sql+'where '+colAndVal
-                    value = newValue + value
-                    self.cursor.execute(sql, value)
+                    self.__updateOperation(tableName, value, newValue)
+                    i = i + 1
             else:
                 print(
                     '[_MySQLDatabaseServer_updateData]ERROR: undefined operation type')
                 return -3
         return 0
+
+    def updateBetData(self, tableName, data):
+        if type(data) != list:
+            print('[MySQL][updateBetData]ERROR: expect data to be list')
+            return -1
+        if self.uncompleted:
+            data.insert(0, self.uncompleted)
+            self.uncompleted = None
+        length = len(data)
+        for i in range(length):
+            svalue = data[i]
+            operation = svalue[-1]
+            value = svalue[:-2]
+            if operation == 'I':
+                if not self.__dataInTable(tableName, value):
+                    self.__insertOperation(tableName, value)
+            elif operation == 'D':
+                if self.__dataInTable(tableName, value):
+                    self.__deleteOperation(tableName, value)
+            elif operation == 'U':
+                if i == length-1:
+                    self.uncompleted = data[i]
+                else:
+                    if self.__dataInTable(tableName, value):
+                        newSvalue = data[i+1]
+                        newOp = newSvalue[-1]
+                        if newOp != 'U':
+                            print('[MySQL][updateBetData]ERROR')
+                            return -2
+                        newValue = newSvalue[:-2]
+                        self.__updateOperation(tableName, value, newValue)
+                        i = i + 1
+            else:
+                print(
+                    '[MySQL][updateBetData]ERROR: undefined operation type')
+                return -3
+        return 0
+
+    def __dataInTable(self, tableName, data):
+        sql = 'select count(*) from ' + tableName + ' '
+        sql = 'where ' + self.colAndVal
+        self.cursor.execute(sql, data)
+        return self.cursor.fetchone()[0] != 0
+
+    def __insertOperation(self, tableName, value):
+        # insert into test (id,name) values (0,'a')
+        sql = "insert into " + tableName
+        sql = sql + self.column + " values " + self.values
+        self.cursor.execute(sql, value)
+
+    def __deleteOperation(self, tableName, value):
+        # delete from test where id=%s and name=%s
+        sql = "delete from " + tableName + " "
+        sql = sql + "where " + self.colAndVal
+        self.cursor.execute(sql, value)
+
+    def __updateOperation(self, tableName, oldValue, newValue):
+        # update test set id=%s, name=%s where id=%s and name=%s
+        sql = 'update ' + tableName + ' '
+        sql = sql + 'set ' + self.col_val + ' '
+        sql = sql + 'where ' + self.colAndVal
+        value = newValue + oldValue
+        self.cursor.execute(sql, value)
 
     def __del__(self):
         self.cursor.close()

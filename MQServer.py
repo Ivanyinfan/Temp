@@ -34,9 +34,7 @@ class Sender():
 
 class SenderSub(Sender):
     def __init__(self, pikaPara, callback):
-        pikaConPara = pika.ConnectionParameters(**pikaPara)
-        self.connection = pika.BlockingConnection(pikaConPara)
-        self.channel = self.connection.channel()
+        Sender.__init__(self, pikaPara)
         self.subscribe = self.channel.queue_declare(SUBTOPUBQUE)
         self.channel.basic_consume(
             queue=self.subscribe.method.queue, no_ack=True, consumer_callback=callback)
