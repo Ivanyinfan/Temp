@@ -1,8 +1,11 @@
-# Git Ignore - Visual Studio Code, Python
-# Copyright Ivan_yin 2019.3.28 All rights reserved
+# Git Ignore - Visual Studio Code, Python, Notepad++
+# Copyright Ivan_yin 2019.3.28-2019.4.17 All rights reserved
 
 # Visual Studio Code
 .vscode/
+
+# Notepad++
+*.bak
 
 # Python
 __pycache__/
