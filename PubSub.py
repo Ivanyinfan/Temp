@@ -7,7 +7,7 @@ import MQServer
 import DatabaseServer
 
 PUBLISHER_DATABASE = "Oracle"
-UPDATE_INTERVAL = 5
+UPDATE_INTERVAL = 3
 
 
 class Publisher():
@@ -169,6 +169,7 @@ class Subscriber():
             print('[Subscriber][sub_callback]minUpdated=%d,maxUpdated=%d' %
                   (minUpdated, maxUpdated))
             update = data['data']
+            print('[Subscriber][sub_callback]update=%s' % (update))
             if maxId == -1:
                 if typee == 0:
                     minId = data['minId']
@@ -179,11 +180,11 @@ class Subscriber():
                         maxId = data['maxId']
                         db.getAllData(tableName, update)
                 else:
-                    cache.append(update)
+                    cache = cache + update
             else:
                 if minUpdated == False:
                     if len(cache) != 0:
-                        update = cache+update
+                        update = cache + update
                         cache.clear()
                     length = len(update)
                     for i in range(length):
@@ -205,6 +206,8 @@ class Subscriber():
                     else:
                         updateBet = update
                         update = []
+                print('[Subscriber][sub_callback]updateBet=%s' % (updateBet))
+                print('[Subscriber][sub_callback]update=%s' % (update))
                 if len(updateBet) != 0:
                     db.updateBetData(tableName, updateBet)
                 re = db.updateData(tableName, update)

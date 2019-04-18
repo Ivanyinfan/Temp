@@ -1,3 +1,4 @@
+import time
 import config
 import cx_Oracle
 import mysql.connector
@@ -49,6 +50,7 @@ class OracleDatabaseServer():
         sql = 'select * from ' + sTableName
         self.cursor.execute(sql)
         update = self.cursor.fetchall()
+        update.sort(key=lambda u: u[-2])
         print('[_OracleDatabaseServer_pub_getUpdate]update='+str(update))
         if len(update) != 0:
             self.__deleteShadowTable(tableName, update[-1][-2])
@@ -266,7 +268,8 @@ class MySQLDatabaseServer():
             data.insert(0, self.uncompleted)
             self.uncompleted = None
         length = len(data)
-        for i in range(length):
+        i = 0
+        while i < length:
             svalue = data[i]
             operation = svalue[-1]
             value = svalue[:-2]
@@ -290,17 +293,20 @@ class MySQLDatabaseServer():
                 print(
                     '[_MySQLDatabaseServer_updateData]ERROR: undefined operation type')
                 return -3
+            i = i + 1
         return 0
 
     def updateBetData(self, tableName, data):
         if type(data) != list:
             print('[MySQL][updateBetData]ERROR: expect data to be list')
             return -1
+        print('[MySQL][updateBetData]tableName=%s' % (tableName))
         if self.uncompleted:
             data.insert(0, self.uncompleted)
             self.uncompleted = None
         length = len(data)
-        for i in range(length):
+        i = 0
+        while i < length:
             svalue = data[i]
             operation = svalue[-1]
             value = svalue[:-2]
@@ -322,16 +328,17 @@ class MySQLDatabaseServer():
                             return -2
                         newValue = newSvalue[:-2]
                         self.__updateOperation(tableName, value, newValue)
-                        i = i + 1
+                    i = i + 1
             else:
                 print(
                     '[MySQL][updateBetData]ERROR: undefined operation type')
                 return -3
+            i = i + 1
         return 0
 
     def __dataInTable(self, tableName, data):
         sql = 'select count(*) from ' + tableName + ' '
-        sql = 'where ' + self.colAndVal
+        sql = sql + 'where ' + self.colAndVal
         self.cursor.execute(sql, data)
         return self.cursor.fetchone()[0] != 0
 
