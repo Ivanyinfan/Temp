@@ -62,7 +62,7 @@ class OracleDatabaseServer():
         seqName = self.seqPrefix + sTableName
         self.__dropTrigger('I_'+tableName)
         self.__dropTrigger('D_'+tableName)
-        self.__dropTrigger('D_'+tableName)
+        self.__dropTrigger('U_'+tableName)
         self.__dropSequence(seqName)
         self.__dropTable(sTableName)
 
