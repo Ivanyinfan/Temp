@@ -12,6 +12,36 @@ def DatabaseServer(name):
         return MySQLDatabaseServer(config.mysql)
 
 
+class Server():
+    def __init__(self):
+        self._con = None
+        self._cursor = None
+        self._column = None
+        self._values = None
+        self._col_val = None
+        self._colAndVal = None
+
+    def _insertOperation(self, tableName, value):
+        # insert into test (id,name) values (0,'a')
+        sql = "insert into " + tableName
+        sql = sql + self._column + " values " + self._values
+        self._cursor.execute(sql, value)
+
+    def _deleteOperation(self, tableName, value):
+        # delete from test where id=%s and name=%s
+        sql = "delete from " + tableName + " "
+        sql = sql + "where " + self._colAndVal
+        self._cursor.execute(sql, value)
+
+    def _updateOperation(self, tableName, oldValue, newValue):
+        # update test set id=%s, name=%s where id=%s and name=%s
+        sql = 'update ' + tableName + ' '
+        sql = sql + 'set ' + self._col_val + ' '
+        sql = sql + 'where ' + self._colAndVal
+        value = newValue + oldValue
+        self._cursor.execute(sql, value)
+
+
 class OracleDatabaseServer():
     def __init__(self, dbPara, shaPrefix='R_SD_', seqPrefix='S_'):
         # OracleDatabaseServer.con = cx_Oracle.connect(**dbPara)
@@ -41,8 +71,9 @@ class OracleDatabaseServer():
         minId = self.__getSequenceNextValue(seqName)
         data = self.__getData(tableName)
         maxId = self.__getSequenceNextValue(seqName)
+        column = self._getColumnName(tableName)
         print('[Oracle][sub_addTable]COMPLETE')
-        return data, minId, maxId
+        return data, minId, maxId, column
 
     def pub_getUpdate(self, tableName):
         print('[_OracleDatabaseServer_pub_getUpdate]tableName='+tableName)
@@ -200,6 +231,17 @@ class OracleDatabaseServer():
         sql = 'drop table '+tableName
         self.cursor.execute(sql)
 
+    def _getColumnName(self, tableName):
+        sql = "select COLUMN_NAME from user_tab_columns where table_name='"
+        sql = sql + str.upper(tableName) + "'"
+        self.cursor.execute(sql)
+        column = tuple()
+        next = self.cursor.fetchone()
+        while next != None:
+            column = column + next
+            next = self.cursor.fetchone()
+        return column
+
     def __del__(self):
         self.cursor.close()
         self.con.close()
@@ -216,14 +258,9 @@ class MySQLDatabaseServer():
         self.col_val = None
         self.colAndVal = None
 
-    def getTableMap(self, tableName, force=False):
-        if force == True:
-            self.__getTableMap(tableName)
-        else:
-            if not tableName in self.tableMap:
-                self.__getTableMap(tableName)
-
-    def __getTableMap(self, tableName):
+    def getTableMap(self, tableName):
+        if tableName in self.tableMap:
+            return
         print('[_MySQLDatabaseServer__getTableMap]tableName=%s' % (tableName))
         sql = 'select column_name from information_schema.columns where table_name=%s'
         self.cursor.execute(sql, (tableName,))
@@ -232,6 +269,9 @@ class MySQLDatabaseServer():
         while next != None:
             column = column+next
             next = self.cursor.fetchone()
+        self._getTabMapFromCol(tableName, column)
+
+    def _getTabMapFromCol(self, tableName, column):
         length = len(column)
         values = ('%s',)*length
         col_val = list()
@@ -252,8 +292,9 @@ class MySQLDatabaseServer():
         sql = 'delete from '+tableName
         self.cursor.execute(sql)
 
-    def getAllData(self, tableName, data):
+    def getAllData(self, tableName, column, data):
         print('[_MySQLDatabaseServer_getAllData]tableName=%s' % (tableName))
+        self._getTabMapFromCol(tableName, column)
         column = self.tableMap[tableName]['column']
         values = self.tableMap[tableName]['values']
         sql = "insert into "+tableName
