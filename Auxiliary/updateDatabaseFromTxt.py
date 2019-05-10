@@ -13,25 +13,27 @@ import DatabaseServer
 
 class Oracle(DatabaseServer.Server):
     def __init__(self):
-        self.con = cx_Oracle.connect(**config.oracle)
-        self.cursor = self.con.cursor()
-        self.column = '(id, name)'
-        self.values = '(:1, :2)'
-        self.col_val = 'id=:1, name=:2'
+        super().__init__()
+        self._con = cx_Oracle.connect(**config.oracle)
+        self._cursor = self._con.cursor()
+        self._column = '(id, name)'
+        self._values = '(:1, :2)'
+        self._col_val = 'id=:1, name=:2'
+        self._colAndVal = 'id=:1 and name=:2'
 
     def insert(self, tableName, value):
         self._insertOperation(tableName, value)
-        self.con.commit()
+        self._con.commit()
 
     def delete(self, tableName, value):
         self.colAndVal = 'id=:1 and name=:2'
         self._deleteOperation(tableName, value)
-        self.con.commit()
+        self._con.commit()
 
     def update(self, tableName, oldValue, newValue):
         self.colAndVal = 'id=:3 and name=:4'
         self._updateOperation(tableName, oldValue, newValue)
-        self.con.commit()
+        self._con.commit()
 
 
 def main():
