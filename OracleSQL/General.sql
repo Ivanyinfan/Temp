@@ -64,6 +64,9 @@ select * from user_triggers where trigger_name='I_TEST';
 select TRIGGER_NAME, TABLE_NAME, STATUS from user_triggers where trigger_name='I_TEST';
 select count(*) from user_sequences where sequence_name='S_R_SD_TEST';
 select * from all_triggers where table_name='I_ITM_STOREITEM';
+col COLUMN_NAME for a15
+select COLUMN_NAME from user_tab_columns where table_name='TEST';
+select COLUMN_NAME from user_tab_columns where table_name='I_ITM_STOREITEM';
 select userenv('language') from dual;
 select dbms_metadata.get_ddl('TABLE','R_SD_TEST') from dual;
 select dbms_metadata.get_ddl('TABLE','USER_TAB_COLUMNS') from dual;
