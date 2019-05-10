@@ -38,7 +38,8 @@ class Publisher():
 
     def deleteTable(self, tableName):
         process = self.tableMap[tableName]
-        process.join(1)
+        process.terminate()
+        process.join()
         self.db.pub_deleteTable(tableName)
 
     def __listenSub(self):
@@ -54,13 +55,14 @@ class Publisher():
                 return
             tableName = body.decode()
             print('[pub_callback]tableName='+tableName)
-            data, minId, maxId = db.sub_addTable(tableName)
+            data, minId, maxId, column = db.sub_addTable(tableName)
             data = {
                 'tableName': tableName,
                 'type': 0,
                 'data': data,
                 'minId': minId,
-                'maxId': maxId
+                'maxId': maxId,
+                'column': column
             }
             data = str(data)
             senSub.send(tableName, data)
@@ -141,10 +143,10 @@ class Subscriber():
 
     def addTable(self, tableName):
         print('[_Subscriber_addTable]tableName='+tableName)
-        thread = threading.Thread(
-            target=self.__addTable, args=(tableName,))
-        self.tableMap[tableName] = thread
-        thread.start()
+        process = multiprocessing.Process(
+            target=sub_addTable, args=(self.dbName,tableName))
+        self.tableMap[tableName] = process
+        process.start()
 
     def __addTable(self, tableName):
         db = DatabaseServer.DatabaseServer(self.dbName)
@@ -218,8 +220,9 @@ class Subscriber():
         rec.subscibe(tableName)
 
     def deleteTable(self, tableName):
-        thread = self.tableMap[tableName]
-        thread.join(1)
+        process = self.tableMap[tableName]
+        process.terminate()
+        process.join()
 
     def sub_callback(self, channel, method, properties, body):
         tableName = method.routing_key
@@ -255,41 +258,73 @@ class Subscriber():
         self.db.updateData(tableName, data)
 
 
-def sub_subTable(dbName, tableName):
-    maxId = -1
-    updated = False
-    db = None
+def sub_addTable(dbName, tableName):
+    db = DatabaseServer.DatabaseServer(dbName)
+    db.getTableMap(tableName)
+    db.deleteTable(tableName)
     rec = None
+    minId = -1
+    maxId = -1
+    minUpdated = False
+    maxUpdated = False
+    cache = list()
 
     def sub_callback(channel, method, properties, body):
-        nonlocal maxId, updated
+        nonlocal db, rec, minId, maxId, minUpdated, maxUpdated, cache
         tableName = method.routing_key
         data = eval(body.decode())
         typee = data['type']
-        print('[_Subscriber_sub_callback]tableName=%s,type=%d,maxId=%d,updated=%s' % (
-            tableName, typee, maxId, updated))
+        print('[Subscriber][sub_callback]tableName=%s,type=%d' %
+                (tableName, typee))
+        print('[Subscriber][sub_callback]minId=%d,maxId=%d' %
+                (minId, maxId))
+        print('[Subscriber][sub_callback]minUpdated=%d,maxUpdated=%d' %
+                (minUpdated, maxUpdated))
+        update = data['data']
+        print('[Subscriber][sub_callback]update=%s' % (update))
         if maxId == -1:
             if typee == 0:
-                id = data['id']
-                if id == -1:
+                minId = data['minId']
+                if minId == -1:
                     print('ERROR')
                     rec.stopConsuming()
                 else:
-                    maxId = id
-                    db.getAllData(tableName, data['data'])
+                    maxId = data['maxId']
+                    db.getAllData(tableName, data['column'], update)
+            else:
+                cache = cache + update
         else:
-            data = data['data']
-            if updated == False:
-                length = len(data)
+            if minUpdated == False:
+                if len(cache) != 0:
+                    update = cache + update
+                    cache.clear()
+                length = len(update)
                 for i in range(length):
-                    if data[i][-2] > id:
-                        updated = True
-                        data = data[i:]
+                    if update[i][-2] > minId:
+                        minUpdated = True
+                        update = update[i:]
                         break
                 else:
                     return
-            db.updateData(tableName, data)
+            updateBet = list()
+            if maxUpdated == False:
+                length = len(update)
+                for i in range(length):
+                    if update[i][-2] > maxId:
+                        maxUpdated = True
+                        updateBet = update[:i]
+                        update = update[i:]
+                        break
+                else:
+                    updateBet = update
+                    update = []
+            print('[Subscriber][sub_callback]updateBet=%s' % (updateBet))
+            print('[Subscriber][sub_callback]update=%s' % (update))
+            if len(updateBet) != 0:
+                db.updateBetData(tableName, updateBet)
+            re = db.updateData(tableName, update)
+            if re:
+                rec.stopConsuming()
 
-    db = DatabaseServer.DatabaseServer(dbName)
     rec = MQServer.Receiver(config.pika, sub_callback)
     rec.subscibe(tableName)
