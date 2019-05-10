@@ -21,8 +21,16 @@ def addTable(pub, sub, args):
         pub_addTable(pub, sub, args)
 
 
+def deleteTable(pub, sub, args):
+    if pub == None:
+        sub.deleteTable(args[0])
+    else:
+        pub.deleteTable(args[0])
+
+
 command = [
     ['addTable', 1, addTable, 'USEAGE: addTable tableName'],
+    ['deleteTable', 1, deleteTable, 'USEAGE: deleteTable tableName']
 ]
 
 
