@@ -7,7 +7,7 @@ import MQServer
 import DatabaseServer
 
 PUBLISHER_DATABASE = "Oracle"
-UPDATE_INTERVAL = 3
+UPDATE_INTERVAL = 10
 
 
 class Publisher():
@@ -303,13 +303,14 @@ def sub_addTable(dbName, tableName):
                     if column == None:
                         print('ERROR')
                         rec.stopConsuming()
+                        return
                     else:
                         minId = data['minId']
                 db.getAllData(tableName, column, update)
             else:
                 cache = cache + update
-                update.clear()
             typee = 1
+            update.clear()
         if maxId == -1:
             return
         if typee == 0:
