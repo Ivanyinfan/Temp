@@ -20,3 +20,4 @@ alter database test character set utf8;
 show create table I_ITM_STOREITEM;
 alter table I_ITM_STOREITEM character set gbk;
 alter table I_ITM_STOREITEM character set utf8;
+show variables like '%error';
