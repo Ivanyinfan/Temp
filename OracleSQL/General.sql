@@ -66,6 +66,7 @@ select count(*) from user_sequences where sequence_name='S_R_SD_TEST';
 select * from all_triggers where table_name='I_ITM_STOREITEM';
 col COLUMN_NAME for a15
 select COLUMN_NAME from user_tab_columns where table_name='TEST';
+select count(*) from user_tab_columns where table_name='I_ITM_STOREITEM';
 select COLUMN_NAME from user_tab_columns where table_name='I_ITM_STOREITEM';
 select userenv('language') from dual;
 select dbms_metadata.get_ddl('TABLE','R_SD_TEST') from dual;
@@ -75,7 +76,10 @@ select dbms_metadata.get_ddl('TRIGGER','HBL_BALANCE_CHARGE_T') from dual;
 alter system enable restricted session;
 alter DATABASE CHARACTER set ZHS16GBK;
 alter DATABASE CHARACTER set INTERNAL_USE ZHS16GBK;
+--复制表
 create table C##DEP6.R_SD_test as select * from test where 1=2;
+create table TEST_I_ITM_STOREITEM as select * from I_ITM_STOREITEM where 1=2;
+insert into TEST_I_ITM_STOREITEM select * from I_ITM_STOREITEM where rownum<=21000;
 alter table R_SD_test add (REP_SYNC_ID number);
 alter table R_SD_test add (REP_OPERATIONTYPE CHAR(1 BYTE));
 alter trigger HBL_BALANCE_CHARGE_T disable;
