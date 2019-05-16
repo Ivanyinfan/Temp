@@ -55,8 +55,8 @@ class Publisher():
                 return
             tableName = body.decode()
             print('[pub_callback]tableName='+tableName)
-            data, minId, maxId, column = db.sub_addTable(tableName)
-            data = {
+            data, minId, maxId, column = db.sub_addTable(tableName, True)
+            send = {
                 'tableName': tableName,
                 'type': 0,
                 'data': data,
@@ -64,8 +64,20 @@ class Publisher():
                 'maxId': maxId,
                 'column': column
             }
-            data = str(data)
-            senSub.send(tableName, data)
+            send = str(send)
+            senSub.send(tableName, send)
+            if data == None and minId == -1 and maxId == -1 and column == None:
+                return
+            while maxId == -1:
+                data, minId, maxId, column = db.sub_addTable(tableName, False)
+                send = {
+                    'tableName': tableName,
+                    'type': 0,
+                    'data': data,
+                    'minId': minId,
+                    'maxId': maxId,
+                }
+                senSub.send(tableName, str(send))
 
         db = DatabaseServer.DatabaseServer(self.dbName)
         senSub = MQServer.SenderSub(config.pika, pub_callback)
@@ -144,7 +156,7 @@ class Subscriber():
     def addTable(self, tableName):
         print('[_Subscriber_addTable]tableName='+tableName)
         process = multiprocessing.Process(
-            target=sub_addTable, args=(self.dbName,tableName))
+            target=sub_addTable, args=(self.dbName, tableName))
         self.tableMap[tableName] = process
         process.start()
 
@@ -265,66 +277,74 @@ def sub_addTable(dbName, tableName):
     rec = None
     minId = -1
     maxId = -1
+    column = None
     minUpdated = False
     maxUpdated = False
     cache = list()
 
     def sub_callback(channel, method, properties, body):
-        nonlocal db, rec, minId, maxId, minUpdated, maxUpdated, cache
+        nonlocal db, rec, minId, maxId, column, minUpdated, maxUpdated, cache
         tableName = method.routing_key
         data = eval(body.decode())
         typee = data['type']
         print('[Subscriber][sub_callback]tableName=%s,type=%d' %
-                (tableName, typee))
+              (tableName, typee))
         print('[Subscriber][sub_callback]minId=%d,maxId=%d' %
-                (minId, maxId))
+              (minId, maxId))
         print('[Subscriber][sub_callback]minUpdated=%d,maxUpdated=%d' %
-                (minUpdated, maxUpdated))
+              (minUpdated, maxUpdated))
         update = data['data']
-        print('[Subscriber][sub_callback]update=%s' % (update))
+        # print('[Subscriber][sub_callback]update=%s' % (update))
         if maxId == -1:
             if typee == 0:
-                minId = data['minId']
-                if minId == -1:
-                    print('ERROR')
-                    rec.stopConsuming()
-                else:
-                    maxId = data['maxId']
-                    db.getAllData(tableName, data['column'], update)
+                maxId = data['maxId']
+                if 'column' in data:
+                    column = data['column']
+                    if column == None:
+                        print('ERROR')
+                        rec.stopConsuming()
+                    else:
+                        minId = data['minId']
+                db.getAllData(tableName, column, update)
             else:
                 cache = cache + update
-        else:
-            if minUpdated == False:
-                if len(cache) != 0:
-                    update = cache + update
-                    cache.clear()
-                length = len(update)
-                for i in range(length):
-                    if update[i][-2] > minId:
-                        minUpdated = True
-                        update = update[i:]
-                        break
-                else:
-                    return
-            updateBet = list()
-            if maxUpdated == False:
-                length = len(update)
-                for i in range(length):
-                    if update[i][-2] > maxId:
-                        maxUpdated = True
-                        updateBet = update[:i]
-                        update = update[i:]
-                        break
-                else:
-                    updateBet = update
-                    update = []
-            print('[Subscriber][sub_callback]updateBet=%s' % (updateBet))
-            print('[Subscriber][sub_callback]update=%s' % (update))
-            if len(updateBet) != 0:
-                db.updateBetData(tableName, updateBet)
-            re = db.updateData(tableName, update)
-            if re:
-                rec.stopConsuming()
+                update.clear()
+            typee = 1
+        if maxId == -1:
+            return
+        if typee == 0:
+            return
+        if minUpdated == False:
+            if len(cache) != 0:
+                update = cache + update
+                cache.clear()
+            length = len(update)
+            for i in range(length):
+                if update[i][-2] > minId:
+                    minUpdated = True
+                    update = update[i:]
+                    break
+            else:
+                return
+        updateBet = list()
+        if maxUpdated == False:
+            length = len(update)
+            for i in range(length):
+                if update[i][-2] > maxId:
+                    maxUpdated = True
+                    updateBet = update[:i]
+                    update = update[i:]
+                    break
+            else:
+                updateBet = update
+                update = []
+        # print('[Subscriber][sub_callback]updateBet=%s' % (updateBet))
+        # print('[Subscriber][sub_callback]update=%s' % (update))
+        if len(updateBet) != 0:
+            db.updateBetData(tableName, updateBet)
+        re = db.updateData(tableName, update)
+        if re:
+            rec.stopConsuming()
 
     rec = MQServer.Receiver(config.pika, sub_callback)
     rec.subscibe(tableName)

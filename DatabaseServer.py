@@ -1,7 +1,10 @@
+import math
 import time
 import config
 import cx_Oracle
 import mysql.connector
+
+PAGESIZE = 10
 
 
 def DatabaseServer(name):
@@ -51,6 +54,10 @@ class OracleDatabaseServer():
         self.cursor = self.con.cursor()
         self.shaPrefix = shaPrefix
         self.seqPrefix = seqPrefix
+        self._column = None
+        self._count = 0
+        self._pages = 0
+        self._pageNum = 0
 
     def pub_addTable(self, tableName):
         print('[DatabaseServer][addTable]tableName='+tableName)
@@ -62,16 +69,26 @@ class OracleDatabaseServer():
             self.__addSequence(sTableName)
             self.__addTigger(tableName)
 
-    def sub_addTable(self, tableName):
+    def sub_addTable(self, tableName, first):
         print('[Oracle][sub_addTable]tableName='+tableName)
         sTableName = self.shaPrefix + tableName
         seqName = self.seqPrefix + sTableName
         if not self.__tableExist(sTableName):
-            return None, -1, -1
-        minId = self.__getSequenceNextValue(seqName)
-        data = self.__getData(tableName)
-        maxId = self.__getSequenceNextValue(seqName)
-        column = self._getColumnName(tableName)
+            return None, -1, -1, None
+        minId = maxId = -1
+        column = None
+        if first == True:
+            column = self._column = self._getColumnName(tableName)
+            self._count = self._getCount(tableName)
+            self._pages = math.ceil(self._count/PAGESIZE)
+            self._pageNum = 0
+            minId = self.__getSequenceNextValue(seqName)
+            data = self._getDataByPage(tableName, self._column, self._pageNum)
+        else:
+            self._pageNum += 1
+            data = self._getDataByPage(tableName, self._column, self._pageNum)
+        if (self._pageNum+1)*PAGESIZE >= self._count:
+            maxId = self.__getSequenceNextValue(seqName)
         print('[Oracle][sub_addTable]COMPLETE')
         return data, minId, maxId, column
 
@@ -214,6 +231,20 @@ class OracleDatabaseServer():
         self.cursor.execute(sql)
         return self.cursor.fetchall()
 
+    def _getDataByPage(self, tableName, column, pageNum):
+        min = pageNum*PAGESIZE
+        max = min + PAGESIZE
+        column = str(column)[1:-1].replace("'", '')
+        ssquery = 'select * from ' + tableName
+        subquery = 'select a.*, rownum rn '
+        subquery += 'from (' + ssquery + ') a '
+        subquery += 'where rownum <=:max'
+        sql = 'select ' + column + ' from (' + subquery + ')'
+        sql += 'where rn>:min'
+        args = {'min': min, 'max': max}
+        self.cursor.execute(sql, args)
+        return self.cursor.fetchall()
+
     def __commit(self):
         sql = 'commit'
         self.cursor.execute(sql)
@@ -241,6 +272,11 @@ class OracleDatabaseServer():
             column = column + next
             next = self.cursor.fetchone()
         return column
+
+    def _getCount(self, tableName):
+        sql = 'select count(*) from ' + tableName
+        self.cursor.execute(sql)
+        return self.cursor.fetchone()[0]
 
     def __del__(self):
         self.cursor.close()
