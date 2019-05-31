@@ -1,62 +1,113 @@
 #!/usr/bin/env python
+import os
 import sys
-import config
+import json
 import PubSub
+import argparse
+
+TYPE = None
+CONFIG_FILE = 'config.json'
 
 
-def pub_addTable(pub, sub, args):
-    print('[pub_addTable]tableName='+args[0])
-    pub.pub_addTable(args[0])
-
-
-def sub_addTable(pub, sub, args):
-    print('[sub_addTable]tableName='+args[0])
-    sub.addTable(args[0])
-
-
-def addTable(pub, sub, args):
-    if pub == None:
-        sub_addTable(pub, sub, args)
+def addTable(args):
+    global TYPE
+    print('[addTable]tableName='+args[0])
+    if TYPE == 'publisher':
+        PubSub.pub_addTable(args[0])
     else:
-        pub_addTable(pub, sub, args)
+        PubSub.sub_addTable(args[0])
 
 
-def deleteTable(pub, sub, args):
-    if pub == None:
-        sub.deleteTable(args[0])
+def deleteTable(args):
+    global TYPE
+    if TYPE == 'publisher':
+        PubSub.pub_deleteTable(args[0])
     else:
-        pub.deleteTable(args[0])
+        PubSub.sub_deleteTable(args[0])
+
+
+def exitt(args):
+    global TYPE
+    if len(args) == 0:
+        save = False
+    else:
+        save = args[0]
+        if save != 'save':
+            print(command[2][4])
+            return
+        save = True
+    if TYPE == 'publisher':
+        PubSub.pub_exit(save)
+    else:
+        PubSub.sub_exit(save)
 
 
 command = [
-    ['addTable', 1, addTable, 'USEAGE: addTable tableName'],
-    ['deleteTable', 1, deleteTable, 'USEAGE: deleteTable tableName']
+    ['addTable',    1, 2, addTable, 'USEAGE: addTable tableName [serverName]'],
+    ['deleteTable', 1, 1, deleteTable, 'USEAGE: deleteTable tableName'],
+    ['exit',        0, 1, exitt, 'USEAGE: exit [save]']
 ]
 
 
-def main(argc, argv):
-    if argc < 2:
-        return
-    if argv[1] == 'pub':
-        sub = None
-        pub = PubSub.Publisher()
-    elif argv[1] == 'sub':
-        pub = None
-        sub = PubSub.Subscriber()
+def parseArgs(argv):
+    parser = argparse.ArgumentParser()
+    argument = {
+        'dest': 'type',
+        'choices': ['publisher', 'subscriber'],
+        'help': 'indicates the type, publisher or subscriber'
+    }
+    parser.add_argument(**argument)
+    argument = {
+        'type': str,
+        'help': 'the server name'
+    }
+    parser.add_argument('-n', '--name', **argument)
+    argument = {
+        'action': 'store_true',
+        'default': False,
+        'help': 'load previous status'
+    }
+    parser.add_argument('-r', '--recover', **argument)
+    args = parser.parse_args(argv)
+    return args
+
+def loadConfig(fileName):
+    try:
+        f = open(CONFIG_FILE)
+        config = json.load(f)[TYPE]
+    except FileNotFoundError as e:
+        print('[main]ERROR:%s' % (e))
+        exit(0)
     else:
-        return
+        f.close()
+        return config
+
+def main(argc, argv):
+    global TYPE
+    args = parseArgs(argv[1:])
+    args = vars(args)
+    TYPE = args.pop('type')
+    config = loadConfig(CONFIG_FILE)
+    for key, value in args.items():
+        if value != None:
+            config[key] = value
+    if TYPE == 'publisher':
+        PubSub.Publisher(**config)
+    else:
+        PubSub.Subscriber(**config)
     while True:
-        cmd = input('> ')
+        cmd = input('>')
         cmd = cmd.split(' ')
         for c in command:
             if c[0] == cmd[0]:
-                if len(cmd) != c[1]+1:
-                    print(c[3])
-                    exit
-                c[2](pub, sub, cmd[1:])
+                argc = len(cmd) - 1
+                if argc < c[1] or argc > c[2]:
+                    print(c[4])
+                else:
+                    c[3](cmd[1:])
                 break
         else:
-            print('undefined command')
+            print('[main]ERROR: undefined command')
 
 
 if __name__ == '__main__':
