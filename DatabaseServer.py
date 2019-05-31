@@ -6,12 +6,16 @@ import cx_Oracle
 import mysql.connector
 
 
-def DatabaseServer(name):
+def DatabaseServer(name, host, port, user, password, database):
     name = str.upper(name)
-    if name == 'ORACLE':
-        return Oracle(config.oracle)
-    if name == 'MYSQL':
-        return MySQL(config.mysql)
+    try:
+        if name == 'ORACLE':
+            return Oracle(host, port, user, password, database)
+        if name == 'MYSQL':
+            return MySQL(host, port, user, password, database)
+    except:
+        print('[DatabaseServer]ERROR')
+        return None
 
 
 class Server():
@@ -19,6 +23,7 @@ class Server():
         self._con = None
         self._cursor = None
         self._pageSize = 10000
+        self._tableMap = dict()
         self._tableName = None
         self._column = None
         self._columnName = None
@@ -34,6 +39,8 @@ class Server():
         self._count = 0
         self._pages = 0
         self._pageNum = 0
+        # sub
+        self._uncompleted = None
 
     def getAllDataByPage(self, tableName):
         data = list()
@@ -79,10 +86,48 @@ class Server():
         print('[Server][sub_addTable]COMPLETE')
         return data, minId, maxId, column
 
+    def _getTableMap(self, tableName):
+        if tableName in self._tableMap:
+            return self._tableMap[tableName]['column']
+        column = self._getColumnName(tableName)
+        self._getTabMapFromCol(tableName, column)
+        return column
+
+    def _getNextRepSyncID(self, seqName):
+        return int
+
+    def _getTabMapFromCol(self, tableName, column):
+        pass
+
+    def _checkTableName(self, tableName):
+        if self._tableName == tableName:
+            return
+        if not tableName in self._tableMap:
+            return
+        self._tableName = tableName
+        self._column = self._tableMap[tableName]['column']
+        self._columnName = self._tableMap[tableName]['columnName']
+        self._values = self._tableMap[tableName]['values']
+        self._col_val = self._tableMap[tableName]['col_val']
+        self._colAndVal = self._tableMap[tableName]['colAndVal']
+
+    # table
+    def _tableExist(self, tableName):
+        return bool
+
+    def _getColumnName(self, tableName):
+        return tuple
+
+    def _getCount(self, tableName):
+        sql = 'select count(*) from ' + tableName
+        self._cursor.execute(sql)
+        return self._cursor.fetchone()[0]
+
+    # data
     def _insertOperation(self, tableName, value):
         # insert into test (id,name) values (0,'a')
         sql = "insert into " + tableName
-        sql = sql + self._column + " values " + self._values
+        sql = sql + self._columnName + " values " + self._values
         self._cursor.execute(sql, value)
 
     def _deleteOperation(self, tableName, value):
@@ -99,48 +144,58 @@ class Server():
         value = newValue + oldValue
         self._cursor.execute(sql, value)
 
-    def _tableExist(self, tableName):
-        return bool
-
-    def _getColumnName(self, tableName):
-        return tuple
-
-    def _getCount(self, tableName):
-        sql = 'select count(*) from ' + tableName
-        self._cursor.execute(sql)
-        return self._cursor.fetchone()[0]
-
     def _getDataByPage(self, tableName, column, pageNum):
         return list
 
-    def _getNextRepSyncID(self, seqName):
-        return int
+    # other
+    def _tupleToPureString(self, tuplee, bracket=False):
+        lent = len(tuplee)
+        re = str(tuplee)[1:-1].replace("'", "")
+        if lent == 1:
+            re = re[:-1]
+        if bracket:
+            re = '(' + re + ')'
+        return re
 
 
 class Oracle(Server):
-    def __init__(self, dbPara, shaPrefix='R_SD_', seqPrefix='S_'):
-        # OracleDatabaseServer.con = cx_Oracle.connect(**dbPara)
-        # self._cursor = OracleDatabaseServer.con.cursor()
+    def __init__(self, host, port, user, password, database):
         super().__init__()
-        self._con = cx_Oracle.connect(**dbPara)
+        dsn = {
+            'host': host,
+            'port': port,
+            'sid': database
+        }
+        oracle_dsn = cx_Oracle.makedsn(**dsn)
+        oracle = {
+            'user': user,
+            'password': password,
+            'dsn': oracle_dsn
+        }
+        self._con = cx_Oracle.connect(**oracle)
         self._con.autocommit = True
         self._cursor = self._con.cursor()
-        self.shaPrefix = shaPrefix
-        self.seqPrefix = seqPrefix
+        self.shaPrefix = 'R_SD_'
+        self.seqPrefix = 'S_'
         self._column = None
         self._count = 0
         self._pages = 0
         self._pageNum = 0
 
     def pub_addTable(self, tableName):
-        print('[DatabaseServer][addTable]tableName='+tableName)
-        sTableName = self.shaPrefix + tableName
-        re = self._tableExist(sTableName)
-        print('[DatabaseServer][addTable]tableExist='+str(re))
-        if re == False:
+        try:
+            print('[DatabaseServer][addTable]tableName='+tableName)
+            sTableName = self.shaPrefix + tableName
+            # re = self._tableExist(sTableName)
+            # print('[DatabaseServer][addTable]tableExist='+str(re))
+            # if re == False:
             self.__addShadowTable(tableName)
             self.__addSequence(sTableName)
             self.__addTigger(tableName)
+        except:
+            return False
+        else:
+            return True
 
     def sub_addTable(self, tableName, first):
         print('[Oracle][sub_addTable]tableName='+tableName)
@@ -150,9 +205,8 @@ class Oracle(Server):
         if not self._tableExist(sTableName):
             return None, -1, -1, None
         minId = maxId = -1
-        column = None
         if first == True:
-            column = self._column = self._getColumnName(tableName)
+            self._column = self._getColumnName(tableName)
             self._count = self._getCount(tableName)
             self._pages = math.ceil(self._count/self._pageSize)
             self._pageNum = 0
@@ -164,19 +218,20 @@ class Oracle(Server):
         if (self._pageNum+1)*self._pageSize >= self._count:
             maxId = self._getSequenceNextValue(seqName)
         print('[Oracle][sub_addTable]COMPLETE')
-        return data, minId, maxId, column
+        return data, minId, maxId, self._column
 
     def pub_getUpdate(self, tableName):
-        print('[_OracleDatabaseServer_pub_getUpdate]tableName='+tableName)
+        # print('[Oracle][pub_getUpdate]tableName='+tableName)
         sTableName = self.shaPrefix + tableName
-        self._column = self._getColumnName(tableName)
-        column = self._column + ('REP_SYNC_ID','REP_OPERATIONTYPE')
-        update = self._getData(column, sTableName)
-        update.sort(key=lambda u: u[-2])
-        print('[_OracleDatabaseServer_pub_getUpdate]update='+str(update))
+        self._column = self._getTableMap(tableName)
+        # return self._getData(sTableName), self._column
+        column = self._column + ('REP_SYNC_ID', 'REP_OPERATIONTYPE')
+        update = self._getDataByOrder(sTableName, column, ('REP_SYNC_ID',))
+        # update.sort(key=lambda u: u[-2])
+        print('[Oracle][pub_getUpdate]update='+str(update))
         if len(update) != 0:
-            self.__deleteShadowTable(tableName, update[-1][-2])
-        return update
+            self._deleteShadowTable(tableName, update[-1][-2])
+        return update, column
 
     def pub_deleteTable(self, tableName):
         print('[Oracle][pub_deleteTable]tableName='+tableName)
@@ -193,6 +248,31 @@ class Oracle(Server):
             self._column = self._getColumnName(tableName)
         return super().getAllDataByPage(tableName)
 
+    def _getTabMapFromCol(self, tableName, column):
+        length = len(column)
+        col_val = list()
+        values = tuple()
+        for i in range(length):
+            values += (':'+str(i+1),)
+            col_val.append(column[i]+'=%'+str(i))
+        self._column = column
+        self._colAndVal = ' and '.join(col_val)
+        self._columnName = self._tupleToPureString(column, True)
+        self._values = self._tupleToPureString(values, True)
+        self._col_val = self._tupleToPureString(col_val, False)
+        result = dict()
+        result['column'] = self._column
+        result['columnName'] = self._columnName
+        result['values'] = self._values
+        result['col_val'] = self._col_val
+        result['colAndVal'] = self._colAndVal
+        self._tableMap[tableName] = result
+
+    # database
+    def __commit(self):
+        self._con.commit()
+
+    # table
     def _tableExist(self, tableName):
         sql = 'select count(*) from user_tables where table_name=:tablename'
         self._cursor.execute(sql, tableName=str.upper(tableName))
@@ -210,8 +290,27 @@ class Oracle(Server):
             ' add (REP_OPERATIONTYPE CHAR(1 BYTE))'
         self._cursor.execute(sql)
 
-    def __deleteShadowTable(self, tableName, id):
-        print('[_OracleDatabaseServer__deleteShadowTable]tableName=%s,id=%d' % (
+    def __lockTable(self, tableName):
+        print('[Oracle][__lockTable]tableName='+tableName)
+        sql = 'lock table ' + tableName + ' in exclusive mode'
+        self._cursor.execute(sql)
+        self._con.commit()
+        print('[Oracle][__lockTable]COMPLETE')
+
+    def _getColumnName(self, tableName):
+        sql = "select COLUMN_NAME from user_tab_columns where table_name='"
+        sql = sql + str.upper(tableName) + "'"
+        self._cursor.execute(sql)
+        column = tuple()
+        next = self._cursor.fetchone()
+        while next != None:
+            column = column + next
+            next = self._cursor.fetchone()
+        return column
+
+    # data
+    def _deleteShadowTable(self, tableName, id):
+        print('[Oracle][deleteShadowTable]tableName=%s,id=%d' % (
             tableName, id))
         sTableName = self.shaPrefix + tableName
         sql = 'delete from ' + sTableName + ' '
@@ -220,6 +319,14 @@ class Oracle(Server):
         self._con.commit()
         print('[Oracle][deleteShadowTable]COMPLETE')
 
+    # trigger
+    def __tiggerOnTableExist(self, tableName):
+        sql = 'select count(*) from user_triggers where table_name=:tableName'
+        self._cursor.execute(sql, tableName=tableName)
+        re = self._cursor.fetchone()
+        return re[0] != 0
+
+    # sequence
     def __addSequence(self, tableName):
         seqName = self.seqPrefix + tableName
         sql = 'CREATE SEQUENCE ' + seqName + \
@@ -231,22 +338,6 @@ class Oracle(Server):
         sql = 'select ' + seqName + '.nextval from dual'
         self._cursor.execute(sql)
         return self._cursor.fetchone()[0]
-
-    def __tiggerOnTableExist(self, tableName):
-        sql = 'select count(*) from user_triggers where table_name=:tableName'
-        self._cursor.execute(sql, tableName=tableName)
-        re = self._cursor.fetchone()
-        return re[0] != 0
-
-    def __lockTable(self, tableName):
-        print('[Oracle][__lockTable]tableName='+tableName)
-        sql = 'lock table ' + tableName + ' in exclusive mode'
-        self._cursor.execute(sql)
-        self._con.commit()
-        print('[Oracle][__lockTable]COMPLETE')
-
-    def __unlockTable(self, tableName):
-        self.__commit()
 
     def __addTigger(self, tableName):
         sTableName = self.shaPrefix + tableName
@@ -305,30 +396,43 @@ class Oracle(Server):
         self._cursor.execute(sql)
         return self._cursor.fetchone()[0]
 
-    def _getData(self, column, tableName):
-        column = str(column)[1:-1].replace("'", "")
+    def _getData(self, tableName, column=('*',)):
+        column = self._tupleToPureString(column)
         sql = "select " + column + ' from ' + tableName
+        self._cursor.execute(sql)
+        return self._cursor.fetchall()
+
+    def _getDataByOrder(self, tableName, column=('*',), order=None):
+        if order == None:
+            return self._getData(tableName, column)
+        column = self._tupleToPureString(column)
+        order = self._tupleToPureString(order)
+        sql = "select " + column + ' from ' + tableName + ' '
+        sql += 'order by ' + order
+        print(sql)
         self._cursor.execute(sql)
         return self._cursor.fetchall()
 
     def _getDataByPage(self, tableName, column, pageNum):
         min = pageNum * self._pageSize
         max = min + self._pageSize
-        column = str(column)[1:-1].replace("'", '')
+        return self._getPartialData(tableName, min, max, column)
+
+    def _getPartialDataSQL(self, tableName, column):
+        column = self._tupleToPureString(column)
         ssquery = 'select * from ' + tableName
         subquery = 'select a.*, rownum rn '
         subquery += 'from (' + ssquery + ') a '
         subquery += 'where rownum <=:max'
         sql = 'select ' + column + ' from (' + subquery + ')'
         sql += 'where rn>:min'
+        return sql
+
+    def _getPartialData(self, tableName, min, max, column):
+        sql = self._getPartialDataSQL(tableName, column)
         args = {'min': min, 'max': max}
         self._cursor.execute(sql, args)
         return self._cursor.fetchall()
-
-    def __commit(self):
-        sql = 'commit'
-        self._cursor.execute(sql)
-        self._con.commit()
 
     def __dropTrigger(self, triggerName):
         sql = 'drop trigger '+triggerName
@@ -342,21 +446,20 @@ class Oracle(Server):
         sql = 'drop table '+tableName
         self._cursor.execute(sql)
 
-    def _getColumnName(self, tableName):
-        sql = "select COLUMN_NAME from user_tab_columns where table_name='"
-        sql = sql + str.upper(tableName) + "'"
+    def _copyTable(self, old, new):
+        sql = 'create table ' + new + \
+            ' as select * from ' + old + ' where 1=2'
         self._cursor.execute(sql)
-        column = tuple()
-        next = self._cursor.fetchone()
-        while next != None:
-            column = column + next
-            next = self._cursor.fetchone()
-        return column
 
-    def _getCount(self, tableName):
-        sql = 'select count(*) from ' + tableName
-        self._cursor.execute(sql)
-        return self._cursor.fetchone()[0]
+    def _copyData(self, old, new, num=-1):
+        print('[Oracle][copyData]old=%s,new=%s,num=%d' % (old, new, num))
+        column = self._getTableMap(old)
+        if num == -1:
+            insert = self._getData(old, column)
+        else:
+            insert = self._getPartialData(old, 0, num, column)
+        for i in insert:
+            self._insertOperation(new, i)
 
     def __del__(self):
         self._cursor.close()
@@ -364,65 +467,41 @@ class Oracle(Server):
 
 
 class MySQL(Server):
-    def __init__(self, dbPara):
+    def __init__(self, host, port, user, password, database):
         super().__init__()
-        self._con = mysql.connector.connect(**dbPara)
+        para = {
+            'host': host,
+            'port': port,
+            'user': user,
+            'password': password,
+            'database': database
+        }
+        self._con = mysql.connector.connect(**para)
         self._cursor = self._con.cursor()
         self._tableMap = dict()
-        self.uncompleted = None
+        self._uncompleted = None
 
-    def getTableMap(self, tableName):
-        if tableName in self._tableMap:
-            return
-        print('[_MySQLDatabaseServer__getTableMap]tableName=%s' % (tableName))
-        sql = 'select column_name from information_schema.columns where table_name=%s'
-        self._cursor.execute(sql, (tableName,))
-        column = tuple()
-        next = self._cursor.fetchone()
-        while next != None:
-            column = column+next
-            next = self._cursor.fetchone()
-        self._getTabMapFromCol(tableName, column)
-
-    def _getTabMapFromCol(self, tableName, column):
-        length = len(column)
-        values = ('%s',)*length
-        col_val = list()
-        for c in column:
-            col_val.append(c+'=%s')
-        self._column = column
-        self._colAndVal = ' and '.join(col_val)
-        self._columnName = str(column).replace("'", "")
-        self._values = str(values).replace("'", "")
-        self._col_val = str(col_val)[1:-1].replace("'", "")
-        result = dict()
-        result['column'] = self._column
-        result['columnName'] = self._columnName
-        result['values'] = self._values
-        result['col_val'] = self._col_val
-        result['colAndVal'] = self._colAndVal
-        self._tableMap[tableName] = result
-
-    def deleteTable(self, tableName):
-        sql = 'delete from '+tableName
-        self._cursor.execute(sql)
-
-    def getAllData(self, tableName, column, data):
-        print('[_MySQLDatabaseServer_getAllData]tableName=%s' % (tableName))
+    def getAllData(self, tableName, column, data, first):
+        print('[MySQL][getAllData]tableName=%s' % (tableName))
+        print('[MySQL][getAllData]column=%s' % (str(column)))
+        print('[MySQL][getAllData]first=%s' % (first))
+        if first:
+            self._deleteTable(tableName)
         self._getTabMapFromCol(tableName, column)
         columName = self._tableMap[tableName]['columnName']
         values = self._tableMap[tableName]['values']
         sql = "insert into " + tableName
         sql = sql + columName + " values " + values
         self._cursor.executemany(sql, data)
+        self._con.commit()
 
     def updateData(self, tableName, data):
         if type(data) != list:
             print('[_MySQLDatabaseServer_updateData]ERROR: expect data to be list')
             return -1
-        if self.uncompleted:
-            data.insert(0, self.uncompleted)
-            self.uncompleted = None
+        if self._uncompleted:
+            data.insert(0, self._uncompleted)
+            self._uncompleted = None
         length = len(data)
         i = 0
         while i < length:
@@ -435,7 +514,7 @@ class MySQL(Server):
                 self.__deleteOperation(tableName, value)
             elif operation == 'U':
                 if i == length-1:
-                    self.uncompleted = data[i]
+                    self._uncompleted = data[i]
                 else:
                     newSvalue = data[i+1]
                     newOp = newSvalue[-1]
@@ -457,9 +536,9 @@ class MySQL(Server):
             print('[MySQL][updateBetData]ERROR: expect data to be list')
             return -1
         print('[MySQL][updateBetData]tableName=%s' % (tableName))
-        if self.uncompleted:
-            data.insert(0, self.uncompleted)
-            self.uncompleted = None
+        if self._uncompleted:
+            data.insert(0, self._uncompleted)
+            self._uncompleted = None
         length = len(data)
         i = 0
         while i < length:
@@ -474,7 +553,7 @@ class MySQL(Server):
                     self.__deleteOperation(tableName, value)
             elif operation == 'U':
                 if i == length-1:
-                    self.uncompleted = data[i]
+                    self._uncompleted = data[i]
                 else:
                     if self._dataInTable(tableName, value):
                         newSvalue = data[i+1]
@@ -492,15 +571,53 @@ class MySQL(Server):
             i = i + 1
         return 0
 
-    def _checkTableName(self, tableName):
-        if self._tableName == tableName:
-            return
-        self._tableName = tableName
-        self._column = self._tableMap[tableName]['column']
-        self._columnName = self._tableMap[tableName]['columnName']
-        self._values = self._tableMap[tableName]['values']
-        self._col_val = self._tableMap[tableName]['col_val']
-        self._colAndVal = self._tableMap[tableName]['colAndVal']
+    def cacheUpdate(self, tableName, update, column):
+        pass
+
+    def getCacheUpdate(self, tableName):
+        return list(), False
+
+    def _getTabMapFromCol(self, tableName, column):
+        length = len(column)
+        values = ('%s',)*length
+        col_val = list()
+        for c in column:
+            col_val.append(c+'=%s')
+        self._column = column
+        self._colAndVal = ' and '.join(col_val)
+        self._columnName = str(column).replace("'", "")
+        self._values = str(values).replace("'", "")
+        self._col_val = str(col_val)[1:-1].replace("'", "")
+        result = dict()
+        result['column'] = self._column
+        result['columnName'] = self._columnName
+        result['values'] = self._values
+        result['col_val'] = self._col_val
+        result['colAndVal'] = self._colAndVal
+        self._tableMap[tableName] = result
+
+    # table
+    def _deleteTable(self, tableName):
+        sql = 'delete from ' + tableName
+        self._cursor.execute(sql)
+
+    def _getColumnName(self, tableName):
+        sql = 'select column_name from information_schema.columns where table_name=%s'
+        self._cursor.execute(sql, (tableName,))
+        column = tuple()
+        next = self._cursor.fetchone()
+        while next != None:
+            column = column+next
+            next = self._cursor.fetchone()
+        return column
+
+    # data
+    def _getDataByPage(self, tableName, column, pageNum):
+        sql = 'select * from ' + tableName + ' '
+        sql += 'limit %s,%s'
+        args = (self._pageNum*self._pageSize, self._pageSize)
+        self._cursor.execute(sql, args)
+        return self._cursor.fetchall()
 
     def _dataInTable(self, tableName, data):
         self._checkTableName(tableName)
@@ -531,13 +648,7 @@ class MySQL(Server):
         value = newValue + oldValue
         self._cursor.execute(sql, value)
 
-    def _getDataByPage(self, tableName, column, pageNum):
-        sql = 'select * from ' + tableName + ' '
-        sql += 'limit %s,%s'
-        args = (self._pageNum*self._pageSize, self._pageSize)
-        self._cursor.execute(sql, args)
-        return self._cursor.fetchall()
-
+    # other
     def _handleNull(self, sql, data, column=None):
         if column == None:
             column = self._column
