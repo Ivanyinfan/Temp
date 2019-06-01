@@ -134,15 +134,21 @@ class Server():
         # delete from test where id=%s and name=%s
         sql = "delete from " + tableName + " "
         sql = sql + "where " + self._colAndVal
+        sql, value = self._handleNull(sql, value)
         self._cursor.execute(sql, value)
 
     def _updateOperation(self, tableName, oldValue, newValue):
         # update test set id=%s, name=%s where id=%s and name=%s
         sql = 'update ' + tableName + ' '
         sql = sql + 'set ' + self._col_val + ' '
-        sql = sql + 'where ' + self._colAndVal
+        where = 'where ' + self._colAndVal
+        where, oldValue = self._handleNull(where, oldValue)
+        sql += where
         value = newValue + oldValue
         self._cursor.execute(sql, value)
+
+    def _handleNull(self, sql, data, column=None):
+        return str, tuple
 
     def _getDataByPage(self, tableName, column, pageNum):
         return list
@@ -409,7 +415,6 @@ class Oracle(Server):
         order = self._tupleToPureString(order)
         sql = "select " + column + ' from ' + tableName + ' '
         sql += 'order by ' + order
-        print(sql)
         self._cursor.execute(sql)
         return self._cursor.fetchall()
 
@@ -495,10 +500,8 @@ class MySQL(Server):
         self._cursor.executemany(sql, data)
         self._con.commit()
 
-    def updateData(self, tableName, data):
-        if type(data) != list:
-            print('[_MySQLDatabaseServer_updateData]ERROR: expect data to be list')
-            return -1
+    def updateData(self, tableName, column, data):
+        self._getTabMapFromCol(tableName, column[:-2])
         if self._uncompleted:
             data.insert(0, self._uncompleted)
             self._uncompleted = None
@@ -509,9 +512,9 @@ class MySQL(Server):
             operation = svalue[-1]
             value = svalue[:-2]
             if operation == 'I':
-                self.__insertOperation(tableName, value)
+                self._insertOperation(tableName, value)
             elif operation == 'D':
-                self.__deleteOperation(tableName, value)
+                self._deleteOperation(tableName, value)
             elif operation == 'U':
                 if i == length-1:
                     self._uncompleted = data[i]
@@ -519,17 +522,16 @@ class MySQL(Server):
                     newSvalue = data[i+1]
                     newOp = newSvalue[-1]
                     if newOp != 'U':
-                        print('[_MySQLDatabaseServer_updateData]ERROR')
-                        return -2
+                        print('[MySQL][updateData]ERROR')
+                        continue
                     newValue = newSvalue[:-2]
-                    self.__updateOperation(tableName, value, newValue)
+                    self._updateOperation(tableName, value, newValue)
                     i = i + 1
             else:
-                print(
-                    '[_MySQLDatabaseServer_updateData]ERROR: undefined operation type')
-                return -3
+                print('[MySQL][updateData]ERROR: undefined operation type')
+                continue
             i = i + 1
-        return 0
+        self._con.commit()
 
     def updateBetData(self, tableName, data):
         if type(data) != list:
@@ -547,10 +549,10 @@ class MySQL(Server):
             value = svalue[:-2]
             if operation == 'I':
                 if not self._dataInTable(tableName, value):
-                    self.__insertOperation(tableName, value)
+                    self._insertOperation(tableName, value)
             elif operation == 'D':
                 if self._dataInTable(tableName, value):
-                    self.__deleteOperation(tableName, value)
+                    self._deleteOperation(tableName, value)
             elif operation == 'U':
                 if i == length-1:
                     self._uncompleted = data[i]
@@ -562,7 +564,7 @@ class MySQL(Server):
                             print('[MySQL][updateBetData]ERROR')
                             return -2
                         newValue = newSvalue[:-2]
-                        self.__updateOperation(tableName, value, newValue)
+                        self._updateOperation(tableName, value, newValue)
                     i = i + 1
             else:
                 print(
@@ -585,9 +587,9 @@ class MySQL(Server):
             col_val.append(c+'=%s')
         self._column = column
         self._colAndVal = ' and '.join(col_val)
-        self._columnName = str(column).replace("'", "")
-        self._values = str(values).replace("'", "")
-        self._col_val = str(col_val)[1:-1].replace("'", "")
+        self._columnName = self._tupleToPureString(column, True)
+        self._values = self._tupleToPureString(values, True)
+        self._col_val = self._tupleToPureString(col_val, False)
         result = dict()
         result['column'] = self._column
         result['columnName'] = self._columnName
@@ -626,27 +628,6 @@ class MySQL(Server):
         sql, data = self._handleNull(sql, data)
         self._cursor.execute(sql, data)
         return self._cursor.fetchone()[0] != 0
-
-    def __insertOperation(self, tableName, value):
-        # insert into test (id,name) values (0,'a')
-        sql = "insert into " + tableName
-        sql = sql + self._columnName + " values " + self._values
-        print(sql, value)
-        self._cursor.execute(sql, value)
-
-    def __deleteOperation(self, tableName, value):
-        # delete from test where id=%s and name=%s
-        sql = "delete from " + tableName + " "
-        sql = sql + "where " + self._colAndVal
-        self._cursor.execute(sql, value)
-
-    def __updateOperation(self, tableName, oldValue, newValue):
-        # update test set id=%s, name=%s where id=%s and name=%s
-        sql = 'update ' + tableName + ' '
-        sql = sql + 'set ' + self._col_val + ' '
-        sql = sql + 'where ' + self._colAndVal
-        value = newValue + oldValue
-        self._cursor.execute(sql, value)
 
     # other
     def _handleNull(self, sql, data, column=None):
