@@ -34,6 +34,8 @@ class Server():
     def judgeCorID(self, id):
         return id == CORRELATION_ID
 
+    def sendAck(self, delivery_tag):
+        self.channel.basic_ack(delivery_tag=delivery_tag)
 
 class Sender(Server):
     def __init__(self, host, port):
@@ -65,11 +67,17 @@ class Receiver(Server):
         self.channel = self.connection.channel()
         exchangePara = {'exchange': EXCHANGE_NAME, 'exchange_type': 'topic'}
         self.exchange = self.channel.exchange_declare(**exchangePara)
-        self.queue = self.channel.queue_declare(name, exclusive=True)
+        queuePara = {
+            'queue': name,
+            'exclusive': True,
+            'durable': True,
+            'auto_delete': True,
+        }
+        self.queue = self.channel.queue_declare(**queuePara)
         self.queueName = self.queue.method.queue
         if callback == None:
             callback = self._call_back
-        self.channel.basic_consume(callback, queue=self.queueName, no_ack=True)
+        self.channel.basic_consume(callback, queue=self.queueName, no_ack=False)
 
     def subscibe(self, tableName):
         print('[Receiver][subscibe]tableName='+tableName)
@@ -98,7 +106,7 @@ class Receiver(Server):
         routing_key = [self.queueName+'.*', 'ALL.*']
         for rk in routing_key:
             self.channel.queue_bind(exchange=EXCHANGE_NAME,
-                                queue=self.queueName, routing_key=rk)
+                                    queue=self.queueName, routing_key=rk)
         self.channel.start_consuming()
 
     def _call_back(self, channel, method, properties, body):
