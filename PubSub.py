@@ -1,4 +1,5 @@
 import os
+import goto
 import json
 import math
 import time
@@ -54,7 +55,7 @@ def adjustThreadsNum():
 
 
 def Publisher(name, dbName, dbHost, dbPort, dbUser, dbPassword, dbDatabase, MQHost, MQPort, recover):
-    global PUBLISHER_DATABASE
+    global PUBLISHER_DATABASE, PUBLISHER_MQ
     global db, sen
     PUBLISHER_DATABASE = {
         'name': dbName,
@@ -64,12 +65,16 @@ def Publisher(name, dbName, dbHost, dbPort, dbUser, dbPassword, dbDatabase, MQHo
         'password': dbPassword,
         'database': dbDatabase
     }
+    PUBLISHER_MQ = {'host': MQHost, 'port': MQPort}
     db = DatabaseServer.DatabaseServer(**PUBLISHER_DATABASE)
-    sen = MQServer.Sender(config.pika)
+    sen = MQServer.Sender(**PUBLISHER_MQ)
     process = multiprocessing.Process(target=pub_manager, args=(
         PUBLISHER_DATABASE, PUBLISHER_MQ, QUEUE, recover,))
     process.start()
-    return True
+    re = QUEUE.get()
+    if re['message'] == 'error':
+        print('[Publisher]ERROR: pub_manager fails to start')
+        exit(0)
 
 
 def pub_addTable(tableName):
@@ -138,7 +143,6 @@ def pub_manager(DBConfig, MQConfig, queue, recover):
     def pub_callback(channel, method, properties, body):
         nonlocal db, senSub, lock
         body = body.decode()
-        print("[pub_callback]body=%s" % (body))
         if not senSub.judgeCorID(properties.correlation_id):
             return
 
@@ -343,7 +347,7 @@ def pub_manager(DBConfig, MQConfig, queue, recover):
         global tableMap
         nonlocal threads, lock
         db = DatabaseServer.DatabaseServer(**PUBLISHER_DATABASE)
-        sen = MQServer.Sender(config.pika)
+        sen = MQServer.Sender(**PUBLISHER_MQ)
 
         def sendUpdate(tableName):
             nonlocal db, sen, reply
@@ -414,9 +418,14 @@ def pub_manager(DBConfig, MQConfig, queue, recover):
 
     if recover == True:
         loadFile(PUBLISHER_FILE)
-    senSub = MQServer.SenderSub(config.pika, pub_callback)
+    senSub = MQServer.SenderSub(**PUBLISHER_MQ, callback=pub_callback)
     listenThread = threading.Thread(target=listenSub)
     listenThread.start()
+    QUEUE.put({
+        'from': 'manager',
+        'to': 'father',
+        'message': 'complete'
+    })
     while True:
         print('[pub_manager]...')
         t1 = time.time()
@@ -446,7 +455,7 @@ def pub_manager(DBConfig, MQConfig, queue, recover):
 
 
 def Subscriber(name, dbName, dbHost, dbPort, dbUser, dbPassword, dbDatabase, MQHost, MQPort, recover):
-    global SUBSCRIBER_DATABASE
+    global SUBSCRIBER_DATABASE, SUBSCRIBER_MQ
     global db, rec, lock
     SUBSCRIBER_DATABASE = {
         'name': dbName,
@@ -456,12 +465,19 @@ def Subscriber(name, dbName, dbHost, dbPort, dbUser, dbPassword, dbDatabase, MQH
         'password': dbPassword,
         'database': dbDatabase
     }
+    SUBSCRIBER_MQ = {
+        'name': name,
+        'host': MQHost,
+        'port': MQPort
+    }
     if recover == True:
         loadFile(SUBSCRIBER_FILE)
     db = DatabaseServer.DatabaseServer(**SUBSCRIBER_DATABASE)
     lock = threading.Lock()
     thread = threading.Thread(target=sub_manager, args=(QUEUE,))
     thread.start()
+    while rec == None:
+        time.sleep(1)
     return True
 
 
@@ -478,6 +494,7 @@ def sub_addTable(tableName):
     tmp['maxId'] = -1
     tmp['minUpdated'] = False
     tmp['maxUpdated'] = False
+    tmp['thread'] = None
     tableMap[tableName] = tmp
     rec.subscibe(tableName)
     lock.release()
@@ -504,12 +521,13 @@ def sub_exit(save):
 
 
 def sub_manager(queue):
-    global SUBSCRIBER_DATABASE
+    global SUBSCRIBER_DATABASE, SUBSCRIBER_MQ
     global tableMap, lock, addThread, reduceThread, rec, QUEUE
     QUEUE = queue
     threads = 0
 
-    def startThread(tableName, data):
+    # 调用时有锁，返回时放锁
+    def startThread(delivery_tag, tableName, data):
         print('body='+str(type(data)))
         global addThread, reduceThread
         nonlocal threads
@@ -522,17 +540,18 @@ def sub_manager(queue):
         tableMap[tableName]['busy'] = True
         threads += 1
         thread = threading.Thread(
-            target=sub_parseUpdate, args=(tableName, data))
+            target=sub_parseUpdate, args=(delivery_tag, tableName, data))
+        tableMap[tableName]['thread'] = thread
         thread.start()
         lock.release()
 
-    def sub_parseUpdate(tableName, data):
-        global tableMap
+    def sub_parseUpdate(delivery_tag, tableName, data):
+        global tableMap, rec
         nonlocal threads
-        print('sub_parseUpdatebody='+str(type(data)))
 
+        @goto.with_goto
         def parseUpdate(data, minId, maxId, minUpdated, maxUpdated):
-            print('parseUpdatebody='+str(type(data)))
+            global tableMap
             nonlocal tableName
             db = DatabaseServer.DatabaseServer(**SUBSCRIBER_DATABASE)
             updateMap = False
@@ -570,15 +589,15 @@ def sub_manager(queue):
                 typee = 1
                 update.clear()
             if maxId == -1:
-                return
+                goto .parseUpdateEnd
             if typee == 0:
-                return
+                goto .parseUpdateEnd
             if firstUpdate == True:
                 lock.acquire()
                 if tableMap[tableName]['cached'] == True:
                     db.cacheUpdate(tableName, update, column)
                     lock.release()
-                    return
+                    goto .parseUpdateEnd
                 lock.release()
             if minUpdated == False:
                 length = len(update)
@@ -589,7 +608,7 @@ def sub_manager(queue):
                         update = update[i:]
                         break
                 else:
-                    return
+                    goto .parseUpdateEnd
             updateBet = list()
             if maxUpdated == False:
                 length = len(update)
@@ -607,47 +626,59 @@ def sub_manager(queue):
             # print('[Subscriber][sub_callback]update=%s' % (update))
             if len(updateBet) != 0:
                 db.updateBetData(tableName, updateBet)
-            db.updateData(tableName, update)
+            db.updateData(tableName, column, update)
+            label .parseUpdateEnd
             if updateMap == True:
                 tableMap[tableName]['minId'] = minId
                 tableMap[tableName]['maxId'] = maxId
                 tableMap[tableName]['minUpdated'] = minUpdated
                 tableMap[tableName]['maxUpdated'] = maxUpdated
 
+        tt = tableMap[tableName]
+        parseUpdate(data, tt['minId'], tt['maxId'],
+                    tt['minUpdated'], tt['maxUpdated'])
+        rec.sendAck(delivery_tag)
         while True:
-            parseUpdate(data, tableMap[tableName]['minId'], tableMap[tableName]['maxId'],
-                        tableMap[tableName]['minUpdated'], tableMap[tableName]['maxUpdated'])
             lock.acquire()
-            ca = tableMap[tableName]['cached']
+            ca = tt['cached']
             print('[sub_parseUpdate]cached=%s' % (ca))
-            if ca == False or tableMap[tableName]['maxId'] == -1:
-                tableMap[tableName]['busy'] = False
+            if ca == False or tt['maxId'] == -1:
+                tt['busy'] = False
                 threads -= 1
                 lock.release()
                 break
             data, next = db.getCacheUpdate(tableName)
             if next == False:
-                tableMap[tableName]['cached'] = False
+                tt['cached'] = False
             lock.release()
+            parseUpdate(data, tt['minId'], tt['maxId'],
+                        tt['minUpdated'], tt['maxUpdated'])
 
     def sub_callback(channel, method, properties, body):
         if not rec.judgeCorID(properties.correlation_id):
             return
+        delivery_tag = method.delivery_tag
         body = eval(body.decode())
-        print('body='+str(type(body)))
-        typee = method.routing_key.split('.')[-1]
-        print('[sub_callback]type='+typee)
-        if typee == 'checkStatus':
+        tableName = method.routing_key.split('.')[-1]
+        if tableName == 'checkStatus':
             return
-        tableName = typee
         lock.acquire()
+        print('[sub_callback]busy=%s' % (tableMap[tableName]['busy']))
         if tableMap[tableName]['busy'] == False:
-            startThread(tableName, body)
+            startThread(delivery_tag, tableName, body)
             adjustThreadsNum()
         else:
-            db.cacheUpdate(tableName, body['update'], body['column'])
-            tableMap[tableName]['cached'] = True
-            lock.release()
+            if body['type'] == 0:
+                thread = tableMap[tableName]['thread']
+                lock.release()
+                thread.join()
+                lock.acquire()
+                startThread(delivery_tag, tableName, body)
+            else:
+                db.cacheUpdate(tableName, body['data'], body['column'])
+                tableMap[tableName]['cached'] = True
+                lock.release()
+                rec.sendAck(delivery_tag)
 
-    rec = MQServer.Receiver(config.pika, sub_callback)
+    rec = MQServer.Receiver(**SUBSCRIBER_MQ, callback=sub_callback)
     rec.receive()
