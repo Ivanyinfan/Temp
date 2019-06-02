@@ -9,7 +9,7 @@ TYPE = None
 CONFIG_FILE = 'config.json'
 
 
-def addTable(args):
+def addTable(pos, args):
     global TYPE
     print('[addTable]tableName='+args[0])
     if TYPE == 'publisher':
@@ -18,7 +18,7 @@ def addTable(args):
         PubSub.sub_addTable(args[0])
 
 
-def deleteTable(args):
+def deleteTable(pos, args):
     global TYPE
     if TYPE == 'publisher':
         PubSub.pub_deleteTable(args[0])
@@ -26,26 +26,26 @@ def deleteTable(args):
         PubSub.sub_deleteTable(args[0])
 
 
-def exitt(args):
+def exitt(pos, args):
     global TYPE
-    if len(args) == 0:
+    if len(args) == 0 or args[0] == 'save':
+        save = True
+    elif args[0] == 'notSave':
         save = False
     else:
-        save = args[0]
-        if save != 'save':
-            print(command[2][4])
-            return
-        save = True
+        print(command[pos][4])
+        return
     if TYPE == 'publisher':
         PubSub.pub_exit(save)
     else:
         PubSub.sub_exit(save)
+    exit(0)
 
 
 command = [
     ['addTable',    1, 2, addTable, 'USEAGE: addTable tableName [serverName]'],
     ['deleteTable', 1, 1, deleteTable, 'USEAGE: deleteTable tableName'],
-    ['exit',        0, 1, exitt, 'USEAGE: exit [save]']
+    ['exit',        0, 1, exitt, 'USEAGE: exit [save, notSave]']
 ]
 
 
@@ -98,13 +98,14 @@ def main(argc, argv):
     while True:
         cmd = input('>')
         cmd = cmd.split(' ')
-        for c in command:
+        for i in range(len(command)):
+            c = command[i]
             if c[0] == cmd[0]:
                 argc = len(cmd) - 1
                 if argc < c[1] or argc > c[2]:
                     print(c[4])
                 else:
-                    c[3](cmd[1:])
+                    c[3](i, cmd[1:])
                 break
         else:
             print('[main]ERROR: undefined command')
