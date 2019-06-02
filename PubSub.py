@@ -14,8 +14,12 @@ PUBLISHER_DATABASE = None
 PUBLISHER_MQ = None
 SUBSCRIBER_DATABASE = None
 SUBSCRIBER_MQ = None
+PUBLISHER_MANAGER = None
+SUBSCRIBER_MANAGER = None
 PUBLISHER_FILE = 'PUBLISHER.json'
+PUBLISHER_TEMP_FILE = 'PUBLISHER.bak.json'
 SUBSCRIBER_FILE = 'SUBSCRIBER.json'
+SUBSCRIBER_TEMP_FILE = 'SUBSCRIBER.bak.json'
 PUBLISHER_NAME = 'PUBLISHER.'
 SUBSCRIBER_NAME = 'SUBSCRIBER'
 UPDATE_INTERVAL = 3
@@ -34,13 +38,28 @@ rec = None
 lock = None
 
 
-def loadFile(fileName):
+def loadFile(fileName, tmpFile, recover):
     global tableMap
-    if not os.path.exists(fileName):
-        print('[loadFile]WARNING: file not exists')
+    if os.path.exists(tmpFile):
+        print('[loadFile]WARNING: tmp file found, recover ignored')
+        f = open(tmpFile, 'r')
+        tableMap = json.load(f)
+        f.close()
         return
-    f = open(fileName, 'r')
-    tableMap = json.load(f)
+    if recover == True:
+        try:
+            f = open(fileName, 'r')
+            tableMap = json.load(f)
+        except FileNotFoundError:
+            print('[loadFile]WARNING: file not exists, recover failed')
+        else:
+            f.close()
+
+
+def saveToFile(fileName):
+    global tableMap
+    f = open(fileName, 'w')
+    json.dump(tableMap, f)
     f.close()
 
 
@@ -55,7 +74,7 @@ def adjustThreadsNum():
 
 
 def Publisher(name, dbName, dbHost, dbPort, dbUser, dbPassword, dbDatabase, MQHost, MQPort, recover):
-    global PUBLISHER_DATABASE, PUBLISHER_MQ
+    global PUBLISHER_MANAGER, PUBLISHER_DATABASE, PUBLISHER_MQ
     global db, sen
     PUBLISHER_DATABASE = {
         'name': dbName,
@@ -68,9 +87,9 @@ def Publisher(name, dbName, dbHost, dbPort, dbUser, dbPassword, dbDatabase, MQHo
     PUBLISHER_MQ = {'host': MQHost, 'port': MQPort}
     db = DatabaseServer.DatabaseServer(**PUBLISHER_DATABASE)
     sen = MQServer.Sender(**PUBLISHER_MQ)
-    process = multiprocessing.Process(target=pub_manager, args=(
+    PUBLISHER_MANAGER = multiprocessing.Process(target=pub_manager, args=(
         PUBLISHER_DATABASE, PUBLISHER_MQ, QUEUE, recover,))
-    process.start()
+    PUBLISHER_MANAGER.start()
     re = QUEUE.get()
     if re['message'] == 'error':
         print('[Publisher]ERROR: pub_manager fails to start')
@@ -124,11 +143,20 @@ def pub_checkStatus():
 
 
 def pub_exit(save):
-    pass
+    global PUBLISHER_MANAGER
+    print('[Publisher][pub_exit]...')
+    put = {
+        'from': 'father',
+        'to': 'manager',
+        'operation': 'exit',
+        'args': [save]
+    }
+    QUEUE.put(put)
+    PUBLISHER_MANAGER.join()
 
 
 def pub_manager(DBConfig, MQConfig, queue, recover):
-    global PUBLISHER_DATABASE, PUBLISHER_MQ
+    global PUBLISHER_MANAGER, PUBLISHER_DATABASE, PUBLISHER_MQ
     global QUEUE, tableMap
     PUBLISHER_DATABASE = DBConfig
     PUBLISHER_MQ = MQConfig
@@ -139,6 +167,7 @@ def pub_manager(DBConfig, MQConfig, queue, recover):
     addThread = reduceThread = 0
     db = DatabaseServer.DatabaseServer(**PUBLISHER_DATABASE)
     senSub = None
+    senSubThread = None
 
     def pub_callback(channel, method, properties, body):
         nonlocal db, senSub, lock
@@ -236,6 +265,7 @@ def pub_manager(DBConfig, MQConfig, queue, recover):
                 left -= time.time() - t
 
     def processCmd(cmd):
+        global tableMap
         try:
             fromm = cmd['from']
             op = cmd['operation']
@@ -244,64 +274,29 @@ def pub_manager(DBConfig, MQConfig, queue, recover):
         print('[processCmd]from=%s,op=%s' % (fromm, op))
         lock.acquire()
         if fromm == 'father':
-            if op == 'EXIT':
-                for tableName in tableMap:
-                    tableMap[tableName]['continue'] = False
-                for tableName in tableMap:
-                    while tableMap[tableName]['busy'] == True:
-                        lock.release()
-                        time.sleep(3)
-                        lock.acquire()
-                if cmd['save'] == True:
-                    f = open(PUBLISHER_FILE, 'w')
-                    json.dump(tableMap, f)
-                    f.close()
-                exit(0)
+            if op == 'exit':
+                lock.release()
+                pub_exit(cmd['args'][0])
             tableName = cmd['tableName']
             if op == 'deleteTable':
-                if tableName not in tableMap:
+                try:
+                    table = tableMap.pop(tableName)
+                except:
                     print('[pub_manager]ERROR: table not exists')
                 else:
-                    tableMap.pop(tableName)
                     t = threading.Thread(
-                        target=pub_deleteTable, args=(tableName,))
+                        target=pub_deleteTable, args=(tableName, table))
                     t.start()
             elif op == 'addTable':
-                if tableName in tableMap:
-                    print('[pub_manager]ERROR: table already exists')
-                else:
-                    tmp = {
-                        'reply': list(),
-                        'busy': False,
-                        'continue': False,
-                        'update': list()
-                    }
-                    tableMap[tableName] = tmp
+                pub_addTable(tableName)
             elif op == 'update':
                 return 0
             else:
                 print('[pub_manager]ERROR: undefined cmd operation')
-        elif fromm == 'listenSub':
-            if op == 'addTable':
-                tableName = cmd['tableName']
-                reply = cmd['reply']
-                update = {'operation': 'addTable', 'serverName': reply}
-                tableMap[tableName]['update'].append(update)
-            elif op == 'deleteTable':
-                tableName = cmd['tableName']
-                reply = cmd['reply']
-                update = {'operation': 'deleteTable', 'serverName': reply}
-                tableMap[tableName]['update'].append(update)
-            else:
-                print('[processCmd]ERROR: undefined cmd operation')
         else:
             print('[processCmd]ERROR: undefined resource')
         lock.release()
         return 1
-
-    def processCmdBetween(cmd):
-        print('[processCmdBetween]...')
-        return 3
 
     def sub_addTable(tableName, reply):
         nonlocal db, senSub
@@ -329,18 +324,18 @@ def pub_manager(DBConfig, MQConfig, queue, recover):
         global tableMap
         nonlocal threads, lock, t1
         if threads >= THREADS_MAXIMUM:
-            while True:
-                lock.release()
-                cmd = QUEUE.get()
-                if processCmdBetween(cmd) == 3:
-                    lock.acquire()
-                    break
+            lock.release()
+            left = UPDATE_INTERVAL - (time.time() - t1)
+            perLeft = max(1, left/len(tableMap.keys()))
+            sleep(perLeft)
+            lock.acquire()
         if checkTable(tableName) == False:
             return
         tableMap[tableName]['busy'] = True
         threads += 1
         thread = threading.Thread(
             target=pub_sendUpdate, args=(tableName, reply))
+        tableMap[tableName]['thread'] = thread
         thread.start()
 
     def pub_sendUpdate(tableName, reply):
@@ -409,18 +404,59 @@ def pub_manager(DBConfig, MQConfig, queue, recover):
             reply = tableMap[tableName]['reply']
             lock.release()
 
-    def pub_deleteTable(tableName):
+    def pub_addTable(tableName):
+        global tableMap
+        if tableName in tableMap:
+            print('[pub_addTable]ERROR: table already exists')
+        else:
+            tmp = {
+                'reply': list(),
+                'busy': False,
+                'continue': False,
+                'update': list(),
+                'thread': None,
+                'lastUpdate': None
+            }
+            tableMap[tableName] = tmp
+            saveToFile(PUBLISHER_TEMP_FILE)
+
+    def pub_deleteTable(tableName, table):
+        nonlocal lock
+        try:
+            table['thread'].join()
+        except:
+            pass
         db = DatabaseServer.DatabaseServer(**PUBLISHER_DATABASE)
         db.pub_deleteTable(tableName)
+        lock.acquire()
+        saveToFile(PUBLISHER_TEMP_FILE)
+        lock.release()
 
-    def pub_exit(save=True):
-        pass
+    def pub_exit(save):
+        global tableMap
+        nonlocal senSub
+        senSub.stopConsuming()
+        senSubThread.join()
+        items = tableMap.items()
+        for it in items:
+            it['continue'] = False
+        for it in items:
+            try:
+                it['thread'].join()
+            except:
+                pass
+        if save == True:
+            saveToFile(PUBLISHER_FILE)
+        try:
+            os.remove(PUBLISHER_TEMP_FILE)
+        except:
+            pass
+        exit(0)
 
-    if recover == True:
-        loadFile(PUBLISHER_FILE)
+    loadFile(PUBLISHER_FILE, PUBLISHER_TEMP_FILE, recover)
     senSub = MQServer.SenderSub(**PUBLISHER_MQ, callback=pub_callback)
-    listenThread = threading.Thread(target=listenSub)
-    listenThread.start()
+    senSubThread = threading.Thread(target=listenSub)
+    senSubThread.start()
     QUEUE.put({
         'from': 'manager',
         'to': 'father',
@@ -455,7 +491,7 @@ def pub_manager(DBConfig, MQConfig, queue, recover):
 
 
 def Subscriber(name, dbName, dbHost, dbPort, dbUser, dbPassword, dbDatabase, MQHost, MQPort, recover):
-    global SUBSCRIBER_DATABASE, SUBSCRIBER_MQ
+    global SUBSCRIBER_MANAGER, SUBSCRIBER_DATABASE, SUBSCRIBER_MQ
     global db, rec, lock
     SUBSCRIBER_DATABASE = {
         'name': dbName,
@@ -470,12 +506,11 @@ def Subscriber(name, dbName, dbHost, dbPort, dbUser, dbPassword, dbDatabase, MQH
         'host': MQHost,
         'port': MQPort
     }
-    if recover == True:
-        loadFile(SUBSCRIBER_FILE)
+    loadFile(SUBSCRIBER_FILE, SUBSCRIBER_TEMP_FILE, recover)
     db = DatabaseServer.DatabaseServer(**SUBSCRIBER_DATABASE)
     lock = threading.Lock()
-    thread = threading.Thread(target=sub_manager, args=(QUEUE,))
-    thread.start()
+    SUBSCRIBER_MANAGER = threading.Thread(target=sub_manager, args=(QUEUE,))
+    SUBSCRIBER_MANAGER.start()
     while rec == None:
         time.sleep(1)
     return True
@@ -497,7 +532,9 @@ def sub_addTable(tableName):
     tmp['thread'] = None
     tableMap[tableName] = tmp
     rec.subscibe(tableName)
+    saveToFile(SUBSCRIBER_TEMP_FILE)
     lock.release()
+    exit(0)
 
 
 def sub_deleteTable(tableName):
@@ -508,6 +545,7 @@ def sub_deleteTable(tableName):
         print('[sub_deleteTable]ERROR: table not exists')
     else:
         rec.unSubscibe(tableName)
+        saveToFile(SUBSCRIBER_TEMP_FILE)
     finally:
         lock.release()
 
@@ -517,7 +555,21 @@ def sub_checkStatus():
 
 
 def sub_exit(save):
-    pass
+    global SUBSCRIBER_MANAGER
+    global tableMap, rec
+    rec.stopConsuming()
+    SUBSCRIBER_MANAGER.join()
+    for it in tableMap.items():
+        try:
+            it['thread'].join
+        except:
+            pass
+    if save == True:
+        saveToFile(SUBSCRIBER_FILE)
+    try:
+        os.remove(SUBSCRIBER_TEMP_FILE)
+    except:
+        pass
 
 
 def sub_manager(queue):
