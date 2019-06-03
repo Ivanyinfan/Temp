@@ -26,6 +26,13 @@ def deleteTable(pos, args):
         PubSub.sub_deleteTable(args[0])
 
 
+def checkStatus(pos, args):
+    if TYPE == 'publisher':
+        PubSub.pub_checkStatus()
+    else:
+        PubSub.sub_checkStatus()
+
+
 def exitt(pos, args):
     global TYPE
     if len(args) == 0 or args[0] == 'save':
@@ -45,6 +52,7 @@ def exitt(pos, args):
 command = [
     ['addTable',    1, 2, addTable, 'USEAGE: addTable tableName [serverName]'],
     ['deleteTable', 1, 1, deleteTable, 'USEAGE: deleteTable tableName'],
+    ['checkStatus', 0, 0, checkStatus, 'USEAGE: checkStatus'],
     ['exit',        0, 1, exitt, 'USEAGE: exit [save, notSave]']
 ]
 
