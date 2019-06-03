@@ -32,15 +32,13 @@ class Server():
         self._colAndVal = None
         self._first = True
         self._next = True
+        self._shaPrefix = 'R_SD_'
         # pub
-        self.shaPrefix = None
         self.seqPrefix = None
-        self._column = None
         self._count = 0
         self._pages = 0
         self._pageNum = 0
         # sub
-        self._uncompleted = None
 
     def getAllDataByPage(self, tableName):
         data = list()
@@ -65,7 +63,7 @@ class Server():
 
     def sub_addTable(self, tableName, first):
         print('[Server][sub_addTable]tableName='+tableName)
-        sTableName = self.shaPrefix + tableName
+        sTableName = self._shaPrefix + tableName
         seqName = self.seqPrefix + sTableName
         if not self._tableExist(sTableName):
             return None, -1, -1, None
@@ -123,6 +121,15 @@ class Server():
         self._cursor.execute(sql)
         return self._cursor.fetchone()[0]
 
+    def _copyTable(self, old, new):
+        sql = 'create table ' + new + \
+            ' as select * from ' + old + ' where 1=2'
+        self._cursor.execute(sql)
+
+    def _dropTable(self, tableName):
+        sql = 'drop table ' + tableName
+        self._cursor.execute(sql)
+
     # data
     def _insertOperation(self, tableName, value):
         # insert into test (id,name) values (0,'a')
@@ -149,6 +156,12 @@ class Server():
 
     def _handleNull(self, sql, data, column=None):
         return str, tuple
+
+    def _getData(self, tableName, column=('*',)):
+        column = self._tupleToPureString(column)
+        sql = "select " + column + ' from ' + tableName
+        self._cursor.execute(sql)
+        return self._cursor.fetchall()
 
     def _getDataByPage(self, tableName, column, pageNum):
         return list
@@ -181,7 +194,6 @@ class Oracle(Server):
         self._con = cx_Oracle.connect(**oracle)
         self._con.autocommit = True
         self._cursor = self._con.cursor()
-        self.shaPrefix = 'R_SD_'
         self.seqPrefix = 'S_'
         self._column = None
         self._count = 0
@@ -191,11 +203,11 @@ class Oracle(Server):
     def pub_addTable(self, tableName):
         try:
             print('[DatabaseServer][addTable]tableName='+tableName)
-            sTableName = self.shaPrefix + tableName
+            sTableName = self._shaPrefix + tableName
             # re = self._tableExist(sTableName)
             # print('[DatabaseServer][addTable]tableExist='+str(re))
             # if re == False:
-            self.__addShadowTable(tableName)
+            self._addShadowTable(tableName)
             self.__addSequence(sTableName)
             self.__addTigger(tableName)
         except:
@@ -206,7 +218,7 @@ class Oracle(Server):
     def sub_addTable(self, tableName, first):
         print('[Oracle][sub_addTable]tableName='+tableName)
         print('[Oracle][sub_addTable]first='+str(first))
-        sTableName = self.shaPrefix + tableName
+        sTableName = self._shaPrefix + tableName
         seqName = self.seqPrefix + sTableName
         if not self._tableExist(sTableName):
             return None, -1, -1, None
@@ -228,7 +240,7 @@ class Oracle(Server):
 
     def pub_getUpdate(self, tableName):
         # print('[Oracle][pub_getUpdate]tableName='+tableName)
-        sTableName = self.shaPrefix + tableName
+        sTableName = self._shaPrefix + tableName
         self._column = self._getTableMap(tableName)
         # return self._getData(sTableName), self._column
         column = self._column + ('REP_SYNC_ID', 'REP_OPERATIONTYPE')
@@ -241,7 +253,7 @@ class Oracle(Server):
 
     def pub_deleteTable(self, tableName):
         print('[Oracle][pub_deleteTable]tableName='+tableName)
-        sTableName = self.shaPrefix + tableName
+        sTableName = self._shaPrefix + tableName
         seqName = self.seqPrefix + sTableName
         self.__dropTrigger('I_'+tableName)
         self.__dropTrigger('D_'+tableName)
@@ -285,11 +297,9 @@ class Oracle(Server):
         re = self._cursor.fetchone()
         return re[0] != 0
 
-    def __addShadowTable(self, tableName):
-        sTableName = self.shaPrefix + tableName
-        sql = 'create table ' + sTableName + \
-            ' as select * from ' + tableName + ' where 1=2'
-        self._cursor.execute(sql)
+    def _addShadowTable(self, tableName):
+        sTableName = self._shaPrefix + tableName
+        self._copyTable(tableName, sTableName)
         sql = 'alter table ' + sTableName + ' add (REP_SYNC_ID number)'
         self._cursor.execute(sql)
         sql = 'alter table ' + sTableName + \
@@ -318,7 +328,7 @@ class Oracle(Server):
     def _deleteShadowTable(self, tableName, id):
         print('[Oracle][deleteShadowTable]tableName=%s,id=%d' % (
             tableName, id))
-        sTableName = self.shaPrefix + tableName
+        sTableName = self._shaPrefix + tableName
         sql = 'delete from ' + sTableName + ' '
         sql = sql + 'where REP_SYNC_ID <= :id'
         self._cursor.execute(sql, id=id)
@@ -346,7 +356,7 @@ class Oracle(Server):
         return self._cursor.fetchone()[0]
 
     def __addTigger(self, tableName):
-        sTableName = self.shaPrefix + tableName
+        sTableName = self._shaPrefix + tableName
         seqName = self.seqPrefix + sTableName
         sql = "select COLUMN_NAME from USER_TAB_COLUMNS where TABLE_NAME='" + \
             str.upper(sTableName) + "'"
@@ -402,12 +412,6 @@ class Oracle(Server):
         self._cursor.execute(sql)
         return self._cursor.fetchone()[0]
 
-    def _getData(self, tableName, column=('*',)):
-        column = self._tupleToPureString(column)
-        sql = "select " + column + ' from ' + tableName
-        self._cursor.execute(sql)
-        return self._cursor.fetchall()
-
     def _getDataByOrder(self, tableName, column=('*',), order=None):
         if order == None:
             return self._getData(tableName, column)
@@ -451,11 +455,6 @@ class Oracle(Server):
         sql = 'drop table '+tableName
         self._cursor.execute(sql)
 
-    def _copyTable(self, old, new):
-        sql = 'create table ' + new + \
-            ' as select * from ' + old + ' where 1=2'
-        self._cursor.execute(sql)
-
     def _copyData(self, old, new, num=-1):
         print('[Oracle][copyData]old=%s,new=%s,num=%d' % (old, new, num))
         column = self._getTableMap(old)
@@ -483,8 +482,7 @@ class MySQL(Server):
         }
         self._con = mysql.connector.connect(**para)
         self._cursor = self._con.cursor()
-        self._tableMap = dict()
-        self._uncompleted = None
+        self._database = database
 
     def getAllData(self, tableName, column, data, first):
         print('[MySQL][getAllData]tableName=%s' % (tableName))
@@ -502,9 +500,6 @@ class MySQL(Server):
 
     def updateData(self, tableName, column, data):
         self._getTabMapFromCol(tableName, column[:-2])
-        if self._uncompleted:
-            data.insert(0, self._uncompleted)
-            self._uncompleted = None
         length = len(data)
         i = 0
         while i < length:
@@ -517,7 +512,7 @@ class MySQL(Server):
                 self._deleteOperation(tableName, value)
             elif operation == 'U':
                 if i == length-1:
-                    self._uncompleted = data[i]
+                    print('[MySQL][updateData]ERROR')
                 else:
                     newSvalue = data[i+1]
                     newOp = newSvalue[-1]
@@ -538,9 +533,6 @@ class MySQL(Server):
             print('[MySQL][updateBetData]ERROR: expect data to be list')
             return -1
         print('[MySQL][updateBetData]tableName=%s' % (tableName))
-        if self._uncompleted:
-            data.insert(0, self._uncompleted)
-            self._uncompleted = None
         length = len(data)
         i = 0
         while i < length:
@@ -555,7 +547,7 @@ class MySQL(Server):
                     self._deleteOperation(tableName, value)
             elif operation == 'U':
                 if i == length-1:
-                    self._uncompleted = data[i]
+                    print('[MySQL][updateData]ERROR')
                 else:
                     if self._dataInTable(tableName, value):
                         newSvalue = data[i+1]
@@ -574,10 +566,24 @@ class MySQL(Server):
         return 0
 
     def cacheUpdate(self, tableName, update, column):
-        pass
+        stn = self._shaPrefix + tableName
+        self._getTabMapFromCol(stn, column)
+        if self._tableExist(stn) == False:
+            self._addShadowTable(tableName)
+        sql = "insert into " + stn
+        sql = sql + self._columnName + " values " + self._values
+        self._cursor.executemany(sql, update)
+        self._con.commit()
 
     def getCacheUpdate(self, tableName):
-        return list(), False
+        stn = self._shaPrefix + tableName
+        if self._tableExist(stn) == False:
+            return list(), None
+        column = self._getColumnName(tableName)
+        print(column)
+        column += ('REP_SYNC_ID', 'REP_OPERATIONTYPE')
+        data = self._getData(stn, column)
+        return data, column
 
     def _getTabMapFromCol(self, tableName, column):
         length = len(column)
@@ -598,13 +604,23 @@ class MySQL(Server):
         result['colAndVal'] = self._colAndVal
         self._tableMap[tableName] = result
 
+    def _addShadowTable(self, tableName):
+        stn = self._shaPrefix + tableName
+        self._copyTable(tableName, stn)
+        sql = 'alter table ' + stn + ' add (REP_SYNC_ID int(11))'
+        self._cursor.execute(sql)
+        sql = 'alter table ' + stn + \
+            ' add (REP_OPERATIONTYPE char(1))'
+        self._cursor.execute(sql)
+
     # table
     def _deleteTable(self, tableName):
         sql = 'delete from ' + tableName
         self._cursor.execute(sql)
 
     def _getColumnName(self, tableName):
-        sql = 'select column_name from information_schema.columns where table_name=%s'
+        sql = 'select column_name from information_schema.columns where table_name=%s '
+        sql += "and table_schema='" + self._database + "'"
         self._cursor.execute(sql, (tableName,))
         column = tuple()
         next = self._cursor.fetchone()
@@ -612,6 +628,13 @@ class MySQL(Server):
             column = column+next
             next = self._cursor.fetchone()
         return column
+
+    def _tableExist(self, tableName):
+        sql = "select count(*) from information_schema.tables "
+        sql += "where table_name='" + tableName + "' "
+        sql += "and table_schema='" + self._database + "'"
+        self._cursor.execute(sql)
+        return self._cursor.fetchone()[0] != 0
 
     # data
     def _getDataByPage(self, tableName, column, pageNum):
