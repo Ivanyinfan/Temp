@@ -13,6 +13,28 @@
 #define GAMECALIBRATE (5.5 / 0.07)
 
 float calibrate = 1.1;
+char POSITIONTYPE[20][20] = {
+    {'B','B','B','B','B','B','B','B','B','B','B','B','B','B','B','B','B','B','B','B'},
+    {'B','B','B','B','B','B','B','B','B','B','B','B','B','B','B','B','B','B','B','B'},
+    {'B','B','B','B','B','B','B','.','.','.','.','.','.','.','.','.','.','.','B','B'},
+    {'B','B','B','B','B','B','B','.','.','.','.','.','.','.','.','.','.','.','B','B'},
+    {'B','B','B','B','B','B','.','.','.','.','.','.','.','.','.','.','.','.','B','B'},
+    {'B','B','B','B','B','.','.','.','.','.','.','.','.','.','.','.','.','.','B','B'},
+    {'B','B','B','B','.','.','.','.','.','.','.','.','.','.','.','.','.','.','B','B'},
+    {'B','B','.','.','.','.','.','.','.','.','.','.','.','.','.','.','.','.','B','B'},
+    {'B','B','.','.','.','.','.','.','.','.','.','.','.','.','.','.','.','.','B','B'},
+    {'B','B','.','.','.','.','.','.','.','.','.','.','.','.','.','.','.','.','B','B'},
+    {'B','B','.','.','.','.','.','.','.','.','.','.','.','.','.','.','.','.','B','B'},
+    {'B','B','.','.','.','.','.','.','.','.','.','.','.','.','.','.','.','.','B','B'},
+    {'B','B','.','.','.','.','.','.','.','.','.','.','.','.','.','.','.','.','B','B'},
+    {'B','B','.','.','.','.','.','.','.','.','.','.','.','.','.','.','W','W','B','B'},
+    {'B','B','.','.','.','.','.','.','.','.','.','.','.','.','.','W','W','W','B','B'},
+    {'B','B','.','.','.','.','.','.','.','.','.','.','.','.','W','W','W','W','B','B'},
+    {'B','B','.','.','.','.','.','.','.','.','.','.','.','W','W','W','W','W','B','B'},
+    {'B','B','.','.','.','.','.','.','.','.','.','.','.','W','W','W','W','W','B','B'},
+    {'B','B','B','B','B','B','B','B','B','B','B','B','B','B','B','B','B','B','B','B'},
+    {'B','B','B','B','B','B','B','B','B','B','B','B','B','B','B','B','B','B','B','B'}
+};
 char TYPE[7];
 char ME;
 char OPPONENT;
@@ -37,6 +59,19 @@ public:
         y = b;
     }
     bool operator==(const Point &p) { return p.x == x && p.y == y; }
+};
+
+struct Point2
+{
+    int x;
+    int y;
+    Point2 *father;
+    Point2(int x,int y,Point2 *f)
+    {
+        this->x = x;
+        this->y = y;
+        this->father = f;
+    }
 };
 
 struct Board
@@ -724,6 +759,61 @@ void output(Board *b)
     fout.close();
 }
 
+void output2(Board *bb)
+{
+    std::fstream fout("output.txt", std::ios::out);
+    int xdiff = abs(bb->nx-bb->ox);
+    int ydiff = abs(bb->ny-bb->oy);
+    if(xdiff<2&&ydiff<2)
+    {
+        fout<<"E "<<bb->ox-2<<','<<bb->oy-2<<' '<<bb->nx-2<<','<<bb->ny-2;
+    }
+    else
+    {
+        std::list<Point2> l;
+        l.push_back(Point2(bb->ox,bb->oy,nullptr));
+        Board &b = BOARD;
+        bool visited[400] = {false};
+        std::vector<Point2 *> r;
+        Point2 *p;
+        for(std::list<Point2>::iterator it = l.begin();;++it)
+        {
+            int nx = it->x;
+            int ny = it->y;
+            p = &(*it);
+            if(nx==bb->nx&&ny==bb->ny)
+                break;
+            if(b.board[ny][nx-1]!='.'&&b.board[ny][nx-2]=='.'&&visited[ny*20+nx-2]==false)
+                {l.push_back(Point2(nx-2,ny,p));visited[ny*20+nx-2]=true;}
+            if(b.board[ny][nx+1]!='.'&&b.board[ny][nx+2]=='.'&&visited[ny*20+nx+2]==false)
+                {l.push_back(Point2(nx+2,ny,p));visited[ny*20+nx+2]=true;}
+            if(b.board[ny-1][nx-1]!='.'&&b.board[ny-2][nx-2]=='.'&&visited[(ny-2)*20+nx-2]==false)
+                {l.push_back(Point2(nx-2,ny-2,p));visited[(ny-2)*20+nx-2]=true;}
+            if(b.board[ny-1][nx]!='.'&&b.board[ny-2][nx]=='.'&&visited[(ny-2)*20+nx]==false)
+                {l.push_back(Point2(nx,ny-2,p));visited[(ny-2)*20+nx]=true;}
+            if(b.board[ny-1][nx+1]!='.'&&b.board[ny-2][nx+2]=='.'&&visited[(ny-2)*20+nx+2]==false)
+                {l.push_back(Point2(nx+2,ny-2,p));visited[(ny-2)*20+nx+2]=true;}
+            if(b.board[ny+1][nx-1]!='.'&&b.board[ny+2][nx-2]=='.'&&visited[(ny+2)*20+nx-2]==false)
+                {l.push_back(Point2(nx-2,ny+2,p));visited[(ny+2)*20+nx-2]=true;}
+            if(b.board[ny+1][nx]!='.'&&b.board[ny+2][nx]=='.'&&visited[(ny+2)*20+nx]==false)
+                {l.push_back(Point2(nx,ny+2,p));visited[(ny+2)*20+nx]=true;}
+            if(b.board[ny+1][nx+1]!='.'&&b.board[ny+2][nx+2]=='.'&&visited[(ny+2)*20+nx+2]==false)
+                {l.push_back(Point2(nx+2,ny+2,p));visited[(ny+2)*20+nx+2]=true;}
+        }
+        // logg<<"[output2]lSize="<<l.size()<<std::endl;
+        do {
+            r.push_back(p);
+            p = p->father;
+        }while(p);
+        int size = r.size();
+        int i;
+        for(i=size-1;i>1;--i)
+            fout<<"J "<<r[i]->x-2<<','<<r[i]->y-2<<' '<<r[i-1]->x-2<<','<<r[i-1]->y-2<<std::endl;
+        fout<<"J "<<r[i]->x-2<<','<<r[i]->y-2<<' '<<r[i-1]->x-2<<','<<r[i-1]->y-2;
+    }
+    fout.close();
+}
+
 void outputLog()
 {
     logg << "layMax:" << LAYMAX << std::endl;
@@ -736,7 +826,7 @@ int main(int argc, char *argv[])
     ARGV = argv[argc - 1];
     getinput();
     Board *b = Alpha_Beta_Search();
-    output(b);
+    output2(b);
     outputLog();
     return 0;
 }
