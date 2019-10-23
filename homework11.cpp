@@ -11,6 +11,9 @@
 #define CALIBRATEBASE 100000
 #define PRUNEFACTOR 2
 #define GAMECALIBRATE (5.5 / 0.07)
+#define FPOS 0
+#define MPOS 1
+#define BPOS 2
 
 float calibrate = 1.1;
 char POSITIONTYPE[20][20] = {
@@ -47,6 +50,8 @@ char *ARGV;
 std::fstream logg;
 int evaluated = 0;
 int pruned = 0;
+int evalFinal = 0;
+int total = 0;
 
 class Point
 {
@@ -301,6 +306,44 @@ void getNextMove(Board &bb, char color)
     // bb.children = result;
 }
 
+void getNewBoard(Board &b, int x, int y, int nx, int ny, std::list<Board *> *result[])
+{
+    Board *r = new Board(b);
+    char color = r->board[y][x];
+    r->board[y][x] = '.';
+    r->board[ny][nx] = color;
+    r->ox = x;
+    r->oy = y;
+    r->nx = nx;
+    r->ny = ny;
+    int xdiff;
+    int ydiff;
+    if(color == 'B')
+    {
+        xdiff = nx - x;
+        ydiff = ny - y;
+    }
+    else
+    {
+        xdiff = x - nx;
+        ydiff = y - ny;
+    }
+    if(xdiff>0)
+    {
+        if(ydiff>0)
+            result[FPOS]->push_back(r);
+        else
+            result[MPOS]->push_back(r);
+    }
+    else
+    {
+        if(ydiff>0)
+            result[MPOS]->push_back(r);
+        else
+            result[BPOS]->push_back(r);
+    }
+}
+
 int inCampNumber(Board &b, char color, int pos[])
 {
     int i = 0;
@@ -374,7 +417,7 @@ void inCamp()
     }
 }
 
-bool inCamp(Board &b, char color, std::list<Board *> *result)
+bool inCamp(Board &b, char color, std::list<Board *> *result[])
 {
     int pos[38];
     int number = inCampNumber(b, color, pos);
@@ -383,7 +426,8 @@ bool inCamp(Board &b, char color, std::list<Board *> *result)
     std::list<Board *> tmp = std::list<Board *>();
     std::list<Board *> outCamp = std::list<Board *>();
     std::list<Board *> furtherCamp = std::list<Board *>();
-    std::list<Board *> others = std::list<Board *>();
+    std::list<Board *> m = std::list<Board *>();
+    std::list<Board *> back = std::list<Board *>();
     for(int i=0;i<number;++i)
     {
         int x = pos[2*i];
@@ -403,17 +447,36 @@ bool inCamp(Board &b, char color, std::list<Board *> *result)
             {
                 if(outCamp.empty())
                 {
-                    int xdiff = nx - b->ox;
-                    int ydiff = ny - b->oy;
-                    if((xdiff>0&&ydiff>=0)||(xdiff>=0&&ydiff>0))
+                    int xdiff;
+                    int ydiff;
+                    if(color == 'B')
                     {
-                        furtherCamp.push_back(b);
+                        xdiff = nx - x;
+                        ydiff = ny - y;
+                    }
+                    else
+                    {
+                        xdiff = x - nx;
+                        ydiff = y - ny;
+                    }
+                    if(xdiff>0)
+                    {
+                        if(ydiff>0)
+                            furtherCamp.push_back(b);
+                        else
+                        {
+                            if(furtherCamp.empty())
+                                m.push_back(b);
+                        }
                     }
                     else
                     {
                         if(furtherCamp.empty())
                         {
-                            others.push_back(b);
+                            if(ydiff>0)
+                                m.push_back(b);
+                            else
+                                back.push_back(b);
                         }
                     }
                 }
@@ -423,19 +486,75 @@ bool inCamp(Board &b, char color, std::list<Board *> *result)
     }
     if(!outCamp.empty())
     {
-        result->splice(result->begin(),outCamp);
+        result[FPOS]->splice(result[FPOS]->begin(),outCamp);
         return true;
     }
     if(!furtherCamp.empty())
     {
-        result->splice(result->begin(),furtherCamp);
+        result[FPOS]->splice(result[FPOS]->begin(),furtherCamp);
         return true;
     }
-    result->splice(result->begin(),others);
+    result[MPOS]->splice(result[MPOS]->begin(), m);
+    result[BPOS]->splice(result[BPOS]->begin(), back);
     return false;
 }
 
 void getNextMove(Board &b, int x, int y, std::list<Board *> *result)
+{
+    std::queue<int> q;
+    char visited[400] = {false};
+    char c = b.board[y][x - 1];
+    if (c == '.') {getNewBoard(b, x, y, x - 1, y, result);visited[y*20+x-1]=true;}
+    else if (b.board[y][x - 2] == '.'){q.push(x-2);q.push(y);visited[y*20+x-2]=true;}
+    c = b.board[y][x + 1];
+    if (c == '.'){getNewBoard(b, x, y, x + 1, y, result);visited[y*20+x+1]=true;}
+    else if (b.board[y][x + 2] == '.'){q.push(x+2);q.push(y);visited[y*20+x+2]=true;}
+    c = b.board[y - 1][x - 1];
+    if (c == '.'){getNewBoard(b, x, y, x - 1, y - 1, result);visited[(y-1)*20+x-1]=true;}
+    else if (b.board[y - 2][x - 2] == '.'){q.push(x-2);q.push(y-2);visited[(y-2)*20+x-2]=true;}
+    c = b.board[y - 1][x];
+    if (c == '.'){getNewBoard(b, x, y, x, y - 1, result);visited[(y-1)*20+x]=true;}
+    else if (b.board[y - 2][x] == '.'){q.push(x);q.push(y-2);visited[(y-2)*20+x]=true;}
+    c = b.board[y - 1][x + 1];
+    if (c == '.'){getNewBoard(b, x, y, x + 1, y - 1, result);visited[(y-1)*20+x+1]=true;}
+    else if (b.board[y - 2][x + 2] == '.')
+    {q.push(x+2);q.push(y-2);visited[(y-2)*20+x+2]=true;}
+    c = b.board[y + 1][x - 1];
+    if (c == '.'){getNewBoard(b, x, y, x - 1, y + 1, result);visited[(y+1)*20+x-1]=true;}
+    else if (b.board[y + 2][x - 2] == '.'){q.push(x-2);q.push(y+2);visited[(y+2)*20+x-2]=true;}
+    c = b.board[y + 1][x];
+    if (c == '.'){getNewBoard(b, x, y, x, y + 1, result);visited[(y+1)*20+x]=true;}
+    else if (b.board[y + 2][x] == '.'){q.push(x);q.push(y+2);visited[(y+2)*20+x]=true;}
+    c = b.board[y + 1][x + 1];
+    if (c == '.'){getNewBoard(b, x, y, x + 1, y + 1, result);visited[(y+1)*20+x+1]=true;}
+    else if (b.board[y + 2][x + 2] == '.'){q.push(x+2);q.push(y+2);visited[(y+2)*20+x+2]=true;}
+    while(!q.empty())
+    {
+        int nx = q.front();
+        q.pop();
+        int ny = q.front();
+        q.pop();
+        getNewBoard(b,x,y,nx,ny,result);
+        if(b.board[ny][nx-1]!='.'&&b.board[ny][nx-2]=='.'&&visited[ny*20+nx-2]==false)
+            {q.push(nx-2);q.push(ny);visited[ny*20+nx-2]=true;}
+        if(b.board[ny][nx+1]!='.'&&b.board[ny][nx+2]=='.'&&visited[ny*20+nx+2]==false)
+            {q.push(nx+2);q.push(ny);visited[ny*20+nx+2]=true;}
+        if(b.board[ny-1][nx-1]!='.'&&b.board[ny-2][nx-2]=='.'&&visited[(ny-2)*20+nx-2]==false)
+            {q.push(nx-2);q.push(ny-2);visited[(ny-2)*20+nx-2]=true;}
+        if(b.board[ny-1][nx]!='.'&&b.board[ny-2][nx]=='.'&&visited[(ny-2)*20+nx]==false)
+            {q.push(nx);q.push(ny-2);visited[(ny-2)*20+nx]=true;}
+        if(b.board[ny-1][nx+1]!='.'&&b.board[ny-2][nx+2]=='.'&&visited[(ny-2)*20+nx+2]==false)
+            {q.push(nx+2);q.push(ny-2);visited[(ny-2)*20+nx+2]=true;}
+        if(b.board[ny+1][nx-1]!='.'&&b.board[ny+2][nx-2]=='.'&&visited[(ny+2)*20+nx-2]==false)
+            {q.push(nx-2);q.push(ny+2);visited[(ny+2)*20+nx-2]=true;}
+        if(b.board[ny+1][nx]!='.'&&b.board[ny+2][nx]=='.'&&visited[(ny+2)*20+nx]==false)
+            {q.push(nx);q.push(ny+2);visited[(ny+2)*20+nx]=true;}
+        if(b.board[ny+1][nx+1]!='.'&&b.board[ny+2][nx+2]=='.'&&visited[(ny+2)*20+nx+2]==false)
+            {q.push(nx+2);q.push(ny+2);visited[(ny+2)*20+nx+2]=true;}
+    }
+}
+
+void getNextMove(Board &b, int x, int y, std::list<Board *> *result[])
 {
     std::queue<int> q;
     char visited[400] = {false};
@@ -495,14 +614,17 @@ void getNextMove2(Board &b, char color)
     if (b.children)
         return;
     // std::vector<Board *> *result = new std::vector<Board *>();
-    std::list<Board *> *result = new std::list<Board *>();
+    std::list<Board *> *further = new std::list<Board *>();
+    std::list<Board *> *middle = new std::list<Board *>();
+    std::list<Board *> *back = new std::list<Board *>();
+    std::list<Board *> *moves[3] = { further, middle, back };
     bool camp;
     camp = color=='B'?INCAMP[0]:INCAMP[1];
     if(camp)
     {
-        if(inCamp(b,color,result))
+        if(inCamp(b,color,moves))
         {
-            b.children = result;
+            b.children = further;
             return;
         }
         for (int y = 2; y < 18; y++)
@@ -511,7 +633,7 @@ void getNextMove2(Board &b, char color)
             {
                 if (b.board[y][x] == color&&POSITIONTYPE[y][x]!=color)
                 {
-                    getNextMove(b,x,y,result);
+                    getNextMove(b,x,y,moves);
                 }
             }
         }
@@ -524,16 +646,19 @@ void getNextMove2(Board &b, char color)
             {
                 if (b.board[y][x] == color)
                 {
-                    getNextMove(b,x,y,result);
+                    getNextMove(b,x,y,moves);
                 }
             }
         }
     }
-    b.children = result;
+    further->splice(further->end(),*middle);
+    further->splice(further->end(),*back);
+    b.children = further;
 }
 
 int isBlackFinal(Board &b)
 {
+    ++evalFinal;
     bool blackFill = true;
     int blackCount = 0;
     for (int y = 13; y < 18; y++)
@@ -562,6 +687,7 @@ int isBlackFinal(Board &b)
 
 int isWhiteFinal(Board &b)
 {
+    ++evalFinal;
     bool whiteFill = true;
     int whiteCount = 0;
     for (int y = 2; y <= 6; y++)
@@ -646,6 +772,7 @@ int Max_Value(Board &b, int alpha, int beta, Board **maxBoard)
     // std::vector<Board *> *c = b.children;
     std::list<Board *> *c = b.children;
     int size = c->size();
+    total += size;
     std::list<Board *>::iterator end = c->end();
     // for (int i = 0; i < size; i++)
     for(std::list<Board *>::iterator it=c->begin();it!=end;++it)
@@ -715,6 +842,7 @@ int Min_Value(Board &b, int alpha, int beta, Board **minBoard)
     // std::vector<Board *> *c = b.children;
     std::list<Board *> *c = b.children;
     int size = c->size();
+    total += size;
     // logg << "minSize:" << size << std::endl;
     // for(int i=0;i<size;i++)
     //     logg << "i:"<<i<<' '<<(*c)[i]->ox<<","<<(*c)[i]->oy<<' '<<(*c)[i]->nx<<','<<(*c)[i]->ny<<std::endl;
@@ -949,7 +1077,7 @@ void output2(Board *bb)
 void outputLog()
 {
     logg << "layMax:" << LAYMAX << std::endl;
-    logg << "Evaluated board:" << evaluated << ", pruned board:" << pruned << std::endl;
+    logg<<"Evaluated board:"<<evaluated<<", pruned board:"<<pruned<<", total board:"<<total<<", evalFinal:"<<evalFinal<<std::endl;
 }
 
 int main(int argc, char *argv[])
