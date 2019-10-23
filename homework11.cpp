@@ -787,7 +787,7 @@ int Max_Value(Board &b, int alpha, int beta, Board **maxBoard)
             return r;
         }
     }
-    int maxValue = NEGINFINITY;
+    int maxValue = NEGINFINITY - 1;
     Board *maxB = nullptr;
     Board *minB = nullptr;
     Board *child;
@@ -860,7 +860,7 @@ int Min_Value(Board &b, int alpha, int beta, Board **minBoard)
             return r;
         }
     }
-    int minValue = POSINFINITY;
+    int minValue = POSINFINITY + 1;
     Board *minB = nullptr;
     Board *maxB = nullptr;
     Board *child;
@@ -911,6 +911,8 @@ Board *getSingleLayMax()
     std::list<Board *> *c = BOARD.children;
     int size = c->size();
     logg << "size:" << size << std::endl;
+    if (size == 1)
+        return *(c->begin());
     int i;
     for (i = 1; ; i++)
     {
@@ -987,7 +989,7 @@ Board *Alpha_Beta_Search()
     {
         std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
         int dis = evaluateDistance();
-        TIME = TIME / (dis / 10) * GAMECALIBRATE;
+        TIME = TIME / (dis / 10.0) * GAMECALIBRATE;
         b = getSingleLayMax();
         if (b)
             return b;
