@@ -43,7 +43,7 @@ char ME;
 char OPPONENT;
 float TIME;
 int LAYMAX;
-int LAYERS;
+int LAYERS = 0;
 bool INCAMP[2] = {false};
 int ARGC;
 char *ARGV;
@@ -304,6 +304,11 @@ void getNextMove(Board &bb, char color)
         }
     }
     // bb.children = result;
+}
+
+void getNextMove(Board *bb, char color)
+{
+    getNextMove(*bb,color);
 }
 
 void getNewBoard(Board &b, int x, int y, int nx, int ny, std::list<Board *> *result[])
@@ -746,11 +751,12 @@ int evaluateBoard(Board &b)
     sort(white.begin(), white.end());
     black[0].distance = black[1].distance;
     white[0].distance = white[1].distance;
-    // for(int i=0;i<20;i++)
+    // if(evaluated==1)
+    // {for(int i=0;i<20;i++)
     // {
-    //     std::cout<<black[i].p.x<<','<<black[i].p.y<<' '<<black[i].distance<<std::endl;
-    //     std::cout<<white[i].p.x<<','<<white[i].p.y<<' '<<white[i].distance<<std::endl;
-    // }
+    //     logg<<black[i].p.x<<','<<black[i].p.y<<' '<<black[i].distance<<std::endl;
+    //     logg<<white[i].p.x<<','<<white[i].p.y<<' '<<white[i].distance<<std::endl;
+    // }}
     int blackV = 0;
     int whiteV = 0;
     for (int i = 1; i <= 19; ++i)
@@ -758,6 +764,7 @@ int evaluateBoard(Board &b)
         blackV += black[i].distance * abs(black[i - 1].distance);
         whiteV += white[i].distance * abs(white[i - 1].distance);
     }
+    // if(evaluated==1)logg<<blackV<<','<<whiteV<<std::endl;
     return whiteV - blackV;
 }
 
@@ -798,8 +805,11 @@ int Max_Value(Board &b, int alpha, int beta, Board **maxBoard)
     {
         // child = (*c)[i];
         child = *it;
+        // if(LAYERS==1)
+        //     logg<<"LAYER:"<<LAYERS<<" MAX:"<<i<<' '<<child->ox<<','<<child->oy<<" "<<child->nx<<","<<child->ny<<std::endl;
         value = Min_Value(*child, alpha, beta, &minB);
-        // logg<<"LAYER:"<<LAYERS<<" MAX:"<<i<<' '<<b->ox<<','<<b->oy<<" "<<b->nx<<","<<b->ny<<' '<<value<<std::endl;
+        // if(LAYERS==1)
+        //     logg<<"LAYER:"<<LAYERS<<" MAX:"<<i<<' '<<child->ox<<','<<child->oy<<" "<<child->nx<<","<<child->ny<<' '<<value<<std::endl;
         if (value >= beta)
         {
             maxValue = value;
@@ -872,7 +882,8 @@ int Min_Value(Board &b, int alpha, int beta, Board **minBoard)
         // child = (*c)[i];
         child = *it;
         value = Max_Value(*child, alpha, beta, &maxB);
-        // log<<"LAYER:"<<LAYERS<<" MIN:"<<i<<' '<<b->ox<<','<<b->oy<<" "<<b->nx<<","<<b->ny<<' '<<value<<std::endl;
+        // if(LAYERS==2)
+        //     logg<<"LAYER:"<<LAYERS<<" MIN:"<<i<<' '<<child->ox<<','<<child->oy<<" "<<child->nx<<","<<child->ny<<' '<<value<<std::endl;
         if (value <= alpha)
         {
             minValue = value;
@@ -999,7 +1010,7 @@ Board *Alpha_Beta_Search()
             Min_Value(BOARD, NEGINFINITY, POSINFINITY, &b);
         std::chrono::system_clock::time_point end = std::chrono::system_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-        double elapsed = double(duration.count()) / 100;
+        double elapsed = double(duration.count()) / 1000;
         logg << "elapsed:" << elapsed << std::endl;
     }
     return b;
