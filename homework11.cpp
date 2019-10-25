@@ -4,18 +4,20 @@
 #include <vector>
 #include <fstream>
 #include <iostream>
+#include <algorithm>
 #include <math.h>
+#include <string.h>
 
 #define POSINFINITY +999999999
 #define NEGINFINITY -999999999
 #define CALIBRATEBASE 100000
-#define PRUNEFACTOR 2
-#define GAMECALIBRATE (5.5 / 0.07)
+#define GAMECALIBRATE (1)
 #define FPOS 0
 #define MPOS 1
 #define BPOS 2
 
-float calibrate = 1.1;
+float calibrate = 1.9;
+int PRUNEFACTOR[6] = {1,1,1,80,1900,1};
 char POSITIONTYPE[20][20] = {
     {'B','B','B','B','B','B','B','B','B','B','B','B','B','B','B','B','B','B','B','B'},
     {'B','B','B','B','B','B','B','B','B','B','B','B','B','B','B','B','B','B','B','B'},
@@ -38,6 +40,7 @@ char POSITIONTYPE[20][20] = {
     {'B','B','B','B','B','B','B','B','B','B','B','B','B','B','B','B','B','B','B','B'},
     {'B','B','B','B','B','B','B','B','B','B','B','B','B','B','B','B','B','B','B','B'}
 };
+std::fstream PLAYDATA; 
 char TYPE[7];
 char ME;
 char OPPONENT;
@@ -95,15 +98,27 @@ struct Board
     Board() { children = nullptr; }
     Board(const Board &b)
     {
-        std::memcpy((void *)board, (void *)b.board, 20 * 20);
+        memcpy((void *)board, (void *)b.board, 20 * 20);
         invalid = b.invalid;
         children = nullptr;
     }
     Board(const char *b)
     {
-        std::memcpy((void *)board, (void *)b, 20 * 20);
+        memcpy((void *)board, (void *)b, 20 * 20);
         children = nullptr;
         ox = oy = nx = ny = 0;
+    }
+    Board(const Board &b, int ox, int oy, int nx, int ny)
+    {
+        memcpy((void *)board, (void *)b.board, 20 * 20);
+        char color = b.board[oy][ox];
+        board[oy][ox]='.';
+        board[ny][nx]=color;
+        this->ox = ox;
+        this->oy = oy;
+        this->nx = nx;
+        this->ny = ny;
+        children = nullptr;
     }
     bool inInvalid(const Point &p) { return find(invalid.begin(), invalid.end(), p) != invalid.end(); }
 };
@@ -313,26 +328,27 @@ void getNextMove(Board *bb, char color)
 
 void getNewBoard(Board &b, int x, int y, int nx, int ny, std::list<Board *> *result[])
 {
-    Board *r = new Board(b);
-    char color = r->board[y][x];
-    r->board[y][x] = '.';
-    r->board[ny][nx] = color;
-    r->ox = x;
-    r->oy = y;
-    r->nx = nx;
-    r->ny = ny;
+    char color = b.board[y][x];
+    if(POSITIONTYPE[ny][nx]==color)
+        return;
+    Board *r = new Board(b,x,y,nx,ny);
     int xdiff;
     int ydiff;
+    char opp;
     if(color == 'B')
     {
+        opp = 'W';
         xdiff = nx - x;
         ydiff = ny - y;
     }
     else
     {
+        opp = 'B';
         xdiff = x - nx;
         ydiff = y - ny;
     }
+    if(POSITIONTYPE[x][y]==opp&&POSITIONTYPE[ny][nx]!=opp)
+        return;
     if(xdiff>0)
     {
         if(ydiff>0)
@@ -464,9 +480,9 @@ bool inCamp(Board &b, char color, std::list<Board *> *result[])
                         xdiff = x - nx;
                         ydiff = y - ny;
                     }
-                    if(xdiff>0)
+                    if(xdiff>=0)
                     {
-                        if(ydiff>0)
+                        if(ydiff>=0)
                             furtherCamp.push_back(b);
                         else
                         {
@@ -478,6 +494,7 @@ bool inCamp(Board &b, char color, std::list<Board *> *result[])
                     {
                         if(furtherCamp.empty())
                         {
+                        
                             if(ydiff>0)
                                 m.push_back(b);
                             else
@@ -719,13 +736,15 @@ int isWhiteFinal(Board &b)
     return 0;
 }
 
-int evaluateBoard(Board &b)
+void evaluateBoard(Board &b, std::vector<Position> *pos[])
 {
     evaluated++;
-    std::vector<Position> black;
-    std::vector<Position> white;
-    black.push_back(Position(0, 0, NEGINFINITY));
-    white.push_back(Position(0, 0, NEGINFINITY));
+    // std::vector<Position> *black = new std::vector<Position>(21);
+    // std::vector<Position> *white = new std::vector<Position>(21);
+    std::vector<Position> *black = new std::vector<Position>();
+    std::vector<Position> *white = new std::vector<Position>();
+    black->push_back(Position(0, 0, NEGINFINITY));
+    white->push_back(Position(0, 0, NEGINFINITY));
     for (int y = 2; y < 18; y++)
     {
         for (int x = 2; x < 18; x++)
@@ -736,27 +755,41 @@ int evaluateBoard(Board &b)
                 int d = 285 - (x + y) * 10;
                 if (d == -5 && (x == 17 || y == 17))
                     d = 5;
-                black.push_back(Position(x, y, d));
+                black->push_back(Position(x, y, d));
             }
             else if (c == 'W')
             {
                 int d = (x + y) * 10 - 95;
                 if (d == -5 && (x == 2 || y == 2))
                     d = 5;
-                white.push_back(Position(x, y, d));
+                white->push_back(Position(x, y, d));
             }
         }
     }
-    sort(black.begin(), black.end());
-    sort(white.begin(), white.end());
-    black[0].distance = black[1].distance;
-    white[0].distance = white[1].distance;
+    black->push_back(Position(0, 0, POSINFINITY));
+    white->push_back(Position(0, 0, POSINFINITY));
+    sort(black->begin(), black->end());
+    sort(white->begin(), white->end());
+    (*black)[0].distance = (*black)[1].distance;
+    (*white)[0].distance = (*white)[1].distance;
+    (*black)[20].distance = (*black)[19].distance;
+    (*white)[20].distance = (*white)[19].distance;
     // if(evaluated==1)
     // {for(int i=0;i<20;i++)
     // {
     //     logg<<black[i].p.x<<','<<black[i].p.y<<' '<<black[i].distance<<std::endl;
     //     logg<<white[i].p.x<<','<<white[i].p.y<<' '<<white[i].distance<<std::endl;
     // }}
+    pos[0]=black;
+    pos[1]=white;
+}
+
+void evaluateBoard(Board &b, int value[])
+{
+    std::vector<Position> *pos[2];
+    evaluateBoard(b, pos);
+    std::vector<Position> black = *(pos[0]);
+    std::vector<Position> white = *(pos[1]);
     int blackV = 0;
     int whiteV = 0;
     for (int i = 1; i <= 19; ++i)
@@ -765,7 +798,186 @@ int evaluateBoard(Board &b)
         whiteV += white[i].distance * abs(white[i - 1].distance);
     }
     // if(evaluated==1)logg<<blackV<<','<<whiteV<<std::endl;
+    value[0] = blackV;
+    value[1] = whiteV;
+}
+
+int evaluateBoard(Board &b)
+{
+    int value[2];
+    evaluateBoard(b,value);
+    return value[1]-value[0];
+}
+
+int evaluateBoard(Board &b, char color)
+{
+    int value[2];
+    evaluateBoard(b, value);
+    if(color=='B')
+        value[1] = value[1] / 10 * 9;
+    else
+        value[0] = value[0] / 10 * 9;
+    return value[1]-value[0];
+}
+
+int evaluateBoard2(Board &b, char color)
+{
+    std::vector<Position> *pos[2];
+    evaluateBoard(b, pos);
+    std::vector<Position> black = *(pos[0]);
+    std::vector<Position> white = *(pos[1]);
+    int blackV = 0;
+    int whiteV = 0;
+    for (int i = 1; i <= 19; ++i)
+    {
+        blackV += black[i].distance * abs(black[i - 1].distance);
+        whiteV += white[i].distance * abs(white[i - 1].distance);
+    }
+    blackV += black[20].distance;
+    whiteV += white[20].distance;
+    if(color=='B')
+        whiteV = whiteV / 10 * 9;
+    else
+        blackV = blackV / 10 * 9;
     return whiteV - blackV;
+}
+
+int evaluateBoard3(Board &b, char color)
+{
+    std::vector<Position> *pos[2];
+    evaluateBoard(b, pos);
+    std::vector<Position> black = *(pos[0]);
+    std::vector<Position> white = *(pos[1]);
+    int blackV = 0;
+    int whiteV = 0;
+    for (int i = 1; i <= 19; ++i)
+    {
+        int d = black[i].distance;
+        int p = black[i - 1].distance;
+        blackV+=d*(abs(p)+std::max(0,d));
+        d = white[i].distance;
+        p = white[i - 1].distance;
+        whiteV += d*(abs(p)+std::max(0,d));
+    }
+    if(color=='B')
+        whiteV = whiteV / 10 * 9;
+    else
+        blackV = blackV / 10 * 9;
+    return whiteV - blackV;
+}
+
+int canJump(Board &b, int x, int y)
+{
+    int r = 0;
+    if(b.board[y][x-1]!='.'&&b.board[y][x-2]=='.')++r;
+    if(b.board[y][x+1]!='.'&&b.board[y][x+2]=='.')++r;
+    if(b.board[y-1][x-1]!='.'&&b.board[y-2][x-2]=='.')++r;
+    if(b.board[y-1][x]!='.'&&b.board[y-2][x]=='.')++r;
+    if(b.board[y-1][x+1]!='.'&&b.board[y-2][x+2]=='.')++r;
+    if(b.board[y+1][x-1]!='.'&&b.board[y+2][x-2]=='.')++r;
+    if(b.board[y+1][x]!='.'&&b.board[y+2][x]=='.')++r;
+    if(b.board[y+1][x+1]!='.'&&b.board[y+2][x+2]=='.')++r;
+    return r;
+}
+
+int evaluateBoard4(Board &b, char color)
+{
+    std::vector<Position> *pos[2];
+    evaluateBoard(b, pos);
+    std::vector<Position> black = *(pos[0]);
+    std::vector<Position> white = *(pos[1]);
+    std::vector<int> panelty;
+    int blackV = 0;
+    int whiteV = 0;
+    for (int i = 1; i <= 19; ++i)
+    {
+        int d = black[i].distance;
+        int p = black[i - 1].distance;
+        int pe = canJump(b,black[i].p.x,black[i].p.y);
+        int d2 = d>0?d*d/8*(8-pe):0;
+        blackV+=d*abs(p)+d2;
+        d = white[i].distance;
+        p = white[i - 1].distance;
+        pe = canJump(b,white[i].p.x,white[i].p.y);
+        d2 = d>0?d*d/8*(8-pe):0;
+        whiteV+=d*abs(p)+d2;
+    }
+    if(color=='B')
+        whiteV = whiteV / 10 * 9;
+    else
+        blackV = blackV / 10 * 9;
+    return whiteV - blackV;
+}
+
+int evaluateBoard5(Board &b, char color)
+{
+    std::vector<Position> *pos[2];
+    evaluateBoard(b, pos);
+    std::vector<Position> black = *(pos[0]);
+    std::vector<Position> white = *(pos[1]);
+    int blackV = 0;
+    int whiteV = 0;
+    for (int i = 1; i <= 19; ++i)
+    {
+        int d = black[i].distance;
+        int p = black[i - 1].distance;
+        int x =(d==p)?d:(d>0?(d-p):1);
+        blackV+=d*abs(p)*x;
+        d = white[i].distance;
+        p = white[i - 1].distance;
+        x =(d==p)?d:(d>0?(d-p):1);
+        whiteV+=d*abs(p)*x;
+    }
+    if(color=='B')
+        whiteV = whiteV / 10 * 9;
+    else
+        blackV = blackV / 10 * 9;
+    return whiteV - blackV;
+}
+
+int evaluateBoard6(Board &b, char color)
+{
+    std::vector<Position> *pos[2];
+    evaluateBoard(b, pos);
+    std::vector<Position> black = *(pos[0]);
+    std::vector<Position> white = *(pos[1]);
+    int blackV = 0;
+    int whiteV = 0;
+    for (int i = 1; i <= 20; ++i)
+    {
+        int d = black[i].distance;
+        int p = black[i - 1].distance;
+        int x = d*abs(p);
+        blackV+=x;
+        d = white[i].distance;
+        p = white[i - 1].distance;
+        x = d*abs(p);
+        whiteV+=x;
+    }
+    // if(b.ox==11&&b.oy==11)
+    // {
+    //     for (int i = 1; i <= 19; ++i)
+    //     {
+    //         logg<<b.nx<<','<<b.ny<<' '<<black[i].distance<<std::endl;
+    //     }
+    // }
+    if(ME=='B')
+        whiteV = whiteV / 10 * 8;
+    else
+        blackV = blackV / 10 * 8;
+    return whiteV - blackV;
+}
+
+void outputPlaydata(std::list<Board*> *bs)
+{
+    int size = bs->size();
+    PLAYDATA.write((char *)&size,sizeof(size));
+    std::list<Board*>::iterator end = bs->end();
+    for(std::list<Board*>::iterator it = bs->begin();it!=end;++it)
+    {
+        Board *b = *it;
+        PLAYDATA.write((char *)b,sizeof(*b));
+    }
 }
 
 int Max_Value(Board &b, int alpha, int beta, Board **maxBoard)
@@ -773,11 +985,14 @@ int Max_Value(Board &b, int alpha, int beta, Board **maxBoard)
     if (LAYERS++ >= LAYMAX)
     {
         LAYERS--;
-        return evaluateBoard(b);
+        // return evaluateBoard(b);
+        // return evaluateBoard(b, 'W');
+        return evaluateBoard6(b, 'W');
     }
     getNextMove2(b, 'B');
     // std::vector<Board *> *c = b.children;
     std::list<Board *> *c = b.children;
+    // outputPlaydata(c);
     int size = c->size();
     total += size;
     std::list<Board *>::iterator end = c->end();
@@ -808,7 +1023,7 @@ int Max_Value(Board &b, int alpha, int beta, Board **maxBoard)
         // if(LAYERS==1)
         //     logg<<"LAYER:"<<LAYERS<<" MAX:"<<i<<' '<<child->ox<<','<<child->oy<<" "<<child->nx<<","<<child->ny<<std::endl;
         value = Min_Value(*child, alpha, beta, &minB);
-        // if(LAYERS==1)
+        // if(LAYERS==1||LAYERS==3)
         //     logg<<"LAYER:"<<LAYERS<<" MAX:"<<i<<' '<<child->ox<<','<<child->oy<<" "<<child->nx<<","<<child->ny<<' '<<value<<std::endl;
         if (value >= beta)
         {
@@ -846,11 +1061,15 @@ int Min_Value(Board &b, int alpha, int beta, Board **minBoard)
     if (LAYERS++ >= LAYMAX)
     {
         LAYERS--;
-        return evaluateBoard(b);
+        // return evaluateBoard(b);
+        // return evaluateBoard(b, 'B');
+        return evaluateBoard6(b, 'B');
     }
     getNextMove2(b, 'W');
+
     // std::vector<Board *> *c = b.children;
     std::list<Board *> *c = b.children;
+    // outputPlaydata(c);
     int size = c->size();
     total += size;
     // logg << "minSize:" << size << std::endl;
@@ -925,9 +1144,9 @@ Board *getSingleLayMax()
     if (size == 1)
         return *(c->begin());
     int i;
-    for (i = 1; ; i++)
+    for (i = 1; i <= 5; i++)
     {
-        float timeNeed = pow(size, i) / CALIBRATEBASE * calibrate / PRUNEFACTOR;
+        float timeNeed = pow(size, i) / CALIBRATEBASE * calibrate / PRUNEFACTOR[i];
         if (timeNeed > TIME)
             break;
     }
@@ -999,6 +1218,19 @@ Board *Alpha_Beta_Search()
     else
     {
         std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+        PLAYDATA.open("playdata.txt", std::ios::binary);
+        float remainT;
+        if(PLAYDATA)
+        {
+            PLAYDATA.read((char *)&remainT,sizeof(remainT));
+            TIME = remainT;
+        }
+        else
+        {
+            PLAYDATA.open("playdata.txt", std::ios::out|std::ios::binary);
+            PLAYDATA.seekp(4);
+            remainT = TIME;
+        }
         int dis = evaluateDistance();
         TIME = TIME / (dis / 10.0) * GAMECALIBRATE;
         b = getSingleLayMax();
@@ -1010,8 +1242,11 @@ Board *Alpha_Beta_Search()
             Min_Value(BOARD, NEGINFINITY, POSINFINITY, &b);
         std::chrono::system_clock::time_point end = std::chrono::system_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-        double elapsed = double(duration.count()) / 1000;
+        float elapsed = float(duration.count()) / 1000;
         logg << "elapsed:" << elapsed << std::endl;
+        remainT -= elapsed;
+        PLAYDATA.seekp(0);
+        PLAYDATA.write((char *)&remainT,sizeof(remainT));
     }
     return b;
 }
